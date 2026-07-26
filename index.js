@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.1';
+    const EXTENSION_VERSION = '1.0.0';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
