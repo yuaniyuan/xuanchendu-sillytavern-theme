@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.3';
+    const EXTENSION_VERSION = '1.0.4';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
@@ -84,6 +84,8 @@
     let aiSnapshot = null;
     let pendingPanelId = null;
     let activeFocusPanelId = null;
+    let aiPromptEditorRequestUntil = 0;
+    let aiPromptEditorPollFrame = null;
     let searchableSelectsPromise = null;
     let composerGsapPromise = null;
     let focusSyncFrame = null;
@@ -2857,6 +2859,77 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         scrim.querySelector('.xy-focus-paper-card')?.remove();
     }
 
+    function restoreAiFocusPresentation() {
+        const panel = document.querySelector(AI_PANEL_SELECTOR);
+        if (activeFocusPanelId === 'left-nav-panel' && panelIsOpen(panel)) {
+            ensureFocusPresentation(ensureFocusScrim(), PANEL_META['left-nav-panel'].focus);
+        }
+    }
+
+    function clearAiPromptEditor(dialog = null) {
+        const editor = dialog instanceof HTMLElement
+            ? dialog
+            : document.querySelector('#completion_prompt_manager_popup.xy-ai-prompt-editor');
+        editor?.__xyAiPromptEditorObserver?.disconnect();
+        editor?.classList.remove('xy-ai-prompt-editor');
+        document.body.classList.remove('xy-ai-prompt-editor-open');
+        restoreAiFocusPresentation();
+    }
+
+    function getAiPromptEditor() {
+        const editor = document.getElementById('completion_prompt_manager_popup');
+        const editArea = document.getElementById('completion_prompt_manager_popup_edit');
+        const isEditVisible = editArea instanceof HTMLElement
+            && window.getComputedStyle(editArea).display !== 'none';
+        return editor instanceof HTMLElement && editor.classList.contains('openDrawer') && isEditVisible
+            ? editor
+            : null;
+    }
+
+    function activateAiPromptEditor(dialog) {
+        if (!(dialog instanceof HTMLElement)) {
+            return;
+        }
+        dialog.classList.add('xy-ai-prompt-editor');
+        document.body.classList.add('xy-ai-prompt-editor-open');
+        removeFocusPresentation(ensureFocusScrim());
+        dialog.__xyAiPromptEditorObserver?.disconnect();
+        const observer = new MutationObserver(() => {
+            if (!dialog.classList.contains('openDrawer')) {
+                observer.disconnect();
+                clearAiPromptEditor(dialog);
+            }
+        });
+        observer.observe(dialog, { attributes: true, attributeFilter: ['class'] });
+        dialog.__xyAiPromptEditorObserver = observer;
+    }
+
+    function findPendingAiPromptEditor() {
+        aiPromptEditorPollFrame = null;
+        const panel = document.querySelector(AI_PANEL_SELECTOR);
+        const dialog = getAiPromptEditor();
+        if (activeFocusPanelId === 'left-nav-panel' && panelIsOpen(panel) && dialog) {
+            aiPromptEditorRequestUntil = 0;
+            activateAiPromptEditor(dialog);
+            return;
+        }
+        if (Date.now() < aiPromptEditorRequestUntil) {
+            aiPromptEditorPollFrame = requestAnimationFrame(findPendingAiPromptEditor);
+        }
+    }
+
+    function requestAiPromptEditor(event) {
+        const target = event.target instanceof Element ? event.target : null;
+        const trigger = target?.closest('#left-nav-panel :is(.fa-pencil, .fa-edit, [title*="编辑"], [aria-label*="编辑"])');
+        if (!trigger || activeFocusPanelId !== 'left-nav-panel') {
+            return;
+        }
+        aiPromptEditorRequestUntil = Date.now() + 1600;
+        if (aiPromptEditorPollFrame === null) {
+            aiPromptEditorPollFrame = requestAnimationFrame(findPendingAiPromptEditor);
+        }
+    }
+
     function enterFocusMode(panel) {
         const meta = panel ? PANEL_META[panel.id] : null;
         if (!meta) {
@@ -3419,6 +3492,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     document.addEventListener('click', closeOnOutsideClick, true);
     document.addEventListener('click', closeExtensionManagerOnBackdrop, true);
     document.addEventListener('click', optimisticallyReorderPinnedChat, true);
+    document.addEventListener('click', requestAiPromptEditor, true);
     document.addEventListener('change', (event) => {
         const select = event.target instanceof HTMLSelectElement ? event.target : null;
         if (!select?.matches('#world_editor_select') || worldbookRestoreInFlight) {
