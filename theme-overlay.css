@@ -1,0 +1,69 @@
+@import url("./theme.css?v=1.0.0");
+
+/* 以独立资源层覆盖旧主题缓存：保留宣纸纹理，仅将最近聊天调整为蓝白渐变。 */
+body.bubblechat #chat:has(> .welcomePanel) .welcomePanel .recentChatList > .recentChat.recentChat {
+  border-color: rgba(231, 241, 243, .68) !important;
+  background-color: #9bbbc5 !important;
+  background-image:
+    linear-gradient(135deg, rgba(249, 252, 251, .18) 0%, rgba(205, 229, 234, .16) 46%, rgba(113, 163, 181, .3) 100%),
+    url("./assets/home-chat-xuan-paper.png") !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, repeat !important;
+  background-size: auto, 320px 320px !important;
+  background-blend-mode: normal, multiply !important;
+}
+
+body.bubblechat #chat:has(> .welcomePanel) .welcomePanel .recentChatList > .recentChat.recentChat:hover {
+  border-color: rgba(246, 252, 253, .82) !important;
+  background-color: #9bbbc5 !important;
+  background-image:
+    linear-gradient(135deg, rgba(249, 252, 251, .18) 0%, rgba(205, 229, 234, .16) 46%, rgba(113, 163, 181, .3) 100%),
+    url("./assets/home-chat-xuan-paper.png") !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, repeat !important;
+  background-size: auto, 320px 320px !important;
+  background-blend-mode: normal, multiply !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), inset 0 -1px 0 rgba(61, 100, 113, .2), 0 4px 10px rgba(8, 30, 40, .16) !important;
+}
+
+body.bubblechat #chat:has(> .welcomePanel) .welcomePanel .recentChatList > .recentChat.recentChat.xy-recent-depth-active {
+  border-color: rgba(250, 254, 253, .9) !important;
+  background-color: #9bbbc5 !important;
+  background-image:
+    linear-gradient(135deg, rgba(249, 252, 251, .18) 0%, rgba(205, 229, 234, .16) 46%, rgba(113, 163, 181, .3) 100%),
+    url("./assets/home-chat-xuan-paper.png") !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, repeat !important;
+  background-size: auto, 320px 320px !important;
+  background-blend-mode: normal, multiply !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), inset 0 -1px 0 rgba(61, 100, 113, .24), 0 5px 12px rgba(8, 30, 40, .2) !important;
+}
+
+body.bubblechat #chat:has(> .welcomePanel) .welcomePanel .recentChatList > .recentChat.recentChat.xy-recent-depth-muted {
+  border-color: rgba(191, 214, 220, .32) !important;
+  background-color: #779ba8 !important;
+  background-image:
+    linear-gradient(135deg, rgba(205, 226, 229, .1) 0%, rgba(117, 161, 176, .2) 100%),
+    url("./assets/home-chat-xuan-paper.png") !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, repeat !important;
+  background-size: auto, 320px 320px !important;
+  background-blend-mode: normal, multiply !important;
+}
+
+/* PixelSnow is rendered directly over SillyTavern's global background image. */
+body > #bg1 > .xy-home-pixel-snow {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.xy-vessel-exit-popover__snow[aria-pressed="true"] {
+  border-color: rgba(189, 224, 235, .82) !important;
+  color: #e5f5f8 !important;
+  background: rgba(53, 91, 105, .88) !important;
+}
