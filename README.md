@@ -6,10 +6,10 @@
 
 1. 在 GitHub 新建仓库后，将本文件夹中的全部文件提交到仓库根目录。
 2. 在 SillyTavern 打开“扩展程序”，选择“从 Git URL 安装扩展”。
-3. 粘贴该 GitHub 仓库链接并安装，然后刷新页面。
+3. 粘贴该 GitHub 仓库链接并安装。首次载入当前版本时会自动刷新一次页面。
 
 扩展根目录必须保留 `manifest.json`、`index.js`、`theme.css`、`theme-overlay.css` 和 `assets/`，不能再嵌套一层目录。
 
 ## 版本
 
-`1.0.0`
+`1.0.1`

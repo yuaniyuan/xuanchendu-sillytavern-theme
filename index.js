@@ -1,4 +1,6 @@
 (() => {
+    const EXTENSION_VERSION = '1.0.1';
+    const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
     window.__xyTwoWingDrawerBehavior = true;
@@ -3516,4 +3518,10 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     setTimeout(scheduleWelcomeHome, 1500);
     setTimeout(applyThemeDisplayDefaults, 500);
     setTimeout(applyThemeDisplayDefaults, 1500);
+
+    // 首次载入当前扩展版本时刷新一次，确保酒馆重新加载全部主题资源。
+    if (window.localStorage.getItem(INSTALL_REFRESH_STORAGE_KEY) !== EXTENSION_VERSION) {
+        window.localStorage.setItem(INSTALL_REFRESH_STORAGE_KEY, EXTENSION_VERSION);
+        window.setTimeout(() => window.location.reload(), 0);
+    }
 })();
