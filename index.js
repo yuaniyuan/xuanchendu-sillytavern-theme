@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.4';
+    const EXTENSION_VERSION = '1.0.5';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
@@ -84,8 +84,7 @@
     let aiSnapshot = null;
     let pendingPanelId = null;
     let activeFocusPanelId = null;
-    let aiPromptEditorRequestUntil = 0;
-    let aiPromptEditorPollFrame = null;
+    let aiPromptEditorStateObserver = null;
     let searchableSelectsPromise = null;
     let composerGsapPromise = null;
     let focusSyncFrame = null;
@@ -2870,7 +2869,6 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         const editor = dialog instanceof HTMLElement
             ? dialog
             : document.querySelector('#completion_prompt_manager_popup.xy-ai-prompt-editor');
-        editor?.__xyAiPromptEditorObserver?.disconnect();
         editor?.classList.remove('xy-ai-prompt-editor');
         document.body.classList.remove('xy-ai-prompt-editor-open');
         restoreAiFocusPresentation();
@@ -2893,41 +2891,32 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         dialog.classList.add('xy-ai-prompt-editor');
         document.body.classList.add('xy-ai-prompt-editor-open');
         removeFocusPresentation(ensureFocusScrim());
-        dialog.__xyAiPromptEditorObserver?.disconnect();
-        const observer = new MutationObserver(() => {
-            if (!dialog.classList.contains('openDrawer')) {
-                observer.disconnect();
-                clearAiPromptEditor(dialog);
-            }
-        });
-        observer.observe(dialog, { attributes: true, attributeFilter: ['class'] });
-        dialog.__xyAiPromptEditorObserver = observer;
     }
 
-    function findPendingAiPromptEditor() {
-        aiPromptEditorPollFrame = null;
+    function syncAiPromptEditor() {
         const panel = document.querySelector(AI_PANEL_SELECTOR);
         const dialog = getAiPromptEditor();
         if (activeFocusPanelId === 'left-nav-panel' && panelIsOpen(panel) && dialog) {
-            aiPromptEditorRequestUntil = 0;
             activateAiPromptEditor(dialog);
             return;
         }
-        if (Date.now() < aiPromptEditorRequestUntil) {
-            aiPromptEditorPollFrame = requestAnimationFrame(findPendingAiPromptEditor);
+        if (document.body.classList.contains('xy-ai-prompt-editor-open')) {
+            clearAiPromptEditor(dialog);
         }
     }
 
-    function requestAiPromptEditor(event) {
-        const target = event.target instanceof Element ? event.target : null;
-        const trigger = target?.closest('#left-nav-panel :is(.fa-pencil, .fa-edit, [title*="编辑"], [aria-label*="编辑"])');
-        if (!trigger || activeFocusPanelId !== 'left-nav-panel') {
+    function bindAiPromptEditor() {
+        const editor = document.getElementById('completion_prompt_manager_popup');
+        const editArea = document.getElementById('completion_prompt_manager_popup_edit');
+        if (!(editor instanceof HTMLElement) || !(editArea instanceof HTMLElement)) {
+            window.setTimeout(bindAiPromptEditor, 500);
             return;
         }
-        aiPromptEditorRequestUntil = Date.now() + 1600;
-        if (aiPromptEditorPollFrame === null) {
-            aiPromptEditorPollFrame = requestAnimationFrame(findPendingAiPromptEditor);
-        }
+        aiPromptEditorStateObserver?.disconnect();
+        aiPromptEditorStateObserver = new MutationObserver(syncAiPromptEditor);
+        aiPromptEditorStateObserver.observe(editor, { attributes: true, attributeFilter: ['class'] });
+        aiPromptEditorStateObserver.observe(editArea, { attributes: true, attributeFilter: ['style'] });
+        syncAiPromptEditor();
     }
 
     function enterFocusMode(panel) {
@@ -2972,6 +2961,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                 }
             });
         }
+        syncAiPromptEditor();
     }
 
     function leaveFocusMode() {
@@ -2992,6 +2982,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             worldbookMemoryRestoreAttempted = false;
         }
         activeFocusPanelId = null;
+        syncAiPromptEditor();
 
         // A panel switch can cancel a pending sidebar tween before GSAP reaches onComplete.
         // Clean only orphaned animation state; an active sidebar animation keeps ownership.
@@ -3492,7 +3483,6 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     document.addEventListener('click', closeOnOutsideClick, true);
     document.addEventListener('click', closeExtensionManagerOnBackdrop, true);
     document.addEventListener('click', optimisticallyReorderPinnedChat, true);
-    document.addEventListener('click', requestAiPromptEditor, true);
     document.addEventListener('change', (event) => {
         const select = event.target instanceof HTMLSelectElement ? event.target : null;
         if (!select?.matches('#world_editor_select') || worldbookRestoreInFlight) {
@@ -3572,6 +3562,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     ensureSidebar();
     ensureSidebarGrainient();
     ensureFocusScrim();
+    bindAiPromptEditor();
     ensureSearchableSelects();
     bindWorldbookShortcuts();
     ensureComposerPlaceholder();
