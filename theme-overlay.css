@@ -69,7 +69,7 @@ body > #bg1 > .xy-home-pixel-snow {
 }
 
 /* 第三方扩展的设置页不一定落在酒馆原生面板或 dialog 中，统一覆盖其标准复选框的材质。 */
-body input[type="checkbox"] {
+body input[type="checkbox"]:not(.mes_checkbox) {
   appearance: none !important;
   -webkit-appearance: none !important;
   display: inline-grid !important;
@@ -80,7 +80,7 @@ body input[type="checkbox"] {
   cursor: pointer;
 }
 
-body input[type="checkbox"]::before {
+body input[type="checkbox"]:not(.mes_checkbox)::before {
   content: '';
   width: .62em;
   height: .62em;
@@ -89,22 +89,22 @@ body input[type="checkbox"]::before {
   background: #e8f4f4;
 }
 
-body input[type="checkbox"]:checked {
+body input[type="checkbox"]:not(.mes_checkbox):checked {
   --SmartThemeCheckboxTickColor: #e8f4f4;
   border-color: rgba(218, 197, 136, .92) !important;
   background: #587d73 !important;
 }
 
-body input[type="checkbox"]:checked::before {
+body input[type="checkbox"]:not(.mes_checkbox):checked::before {
   transform: scale(1);
 }
 
-body input[type="checkbox"]:focus-visible {
+body input[type="checkbox"]:not(.mes_checkbox):focus-visible {
   outline: 2px solid rgba(205, 187, 131, .5);
   outline-offset: 2px;
 }
 
-body input[type="checkbox"]:disabled {
+body input[type="checkbox"]:not(.mes_checkbox):disabled {
   cursor: not-allowed;
   opacity: .5;
 }
