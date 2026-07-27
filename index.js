@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.3';
+    const EXTENSION_VERSION = '1.0.2';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
@@ -67,7 +67,7 @@
         '#PersonaManagement',
         '#right-nav-panel',
     ].join(',');
-    const PANEL_POPUP_SELECTOR = '.select2-container, .ui-front, #xy-select-popover, #shadow_popup, #dialogue_popup, .TH-popup, dialog';
+    const PANEL_POPUP_SELECTOR = '.select2-container, .ui-front, #xy-select-popover, #shadow_popup, #dialogue_popup, #completion_prompt_manager_popup, .TH-popup, dialog';
 
     const AI_PANEL_SELECTOR = '#left-nav-panel';
     const PANEL_META = {
@@ -3106,10 +3106,38 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         }
         window.__xyThemePanelSwitchingBound = true;
 
+        const closePromptWorkspaceFromScrim = (event) => {
+            const eventPath = event.composedPath();
+            const promptPopup = document.querySelector('#completion_prompt_manager_popup.openDrawer');
+            const promptEditor = promptPopup?.querySelector('#completion_prompt_manager_popup_edit');
+            const focusScrim = document.querySelector('#xy-focus-scrim');
+            if (!promptPopup
+                || !(promptEditor instanceof HTMLElement)
+                || getComputedStyle(promptEditor).display === 'none'
+                || !focusScrim
+                || !eventPath.includes(focusScrim)) {
+                return false;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            promptPopup.querySelector('#completion_prompt_manager_popup_entry_form_close')?.click();
+            getThemePanels().forEach(closePanel);
+            pendingPanelId = null;
+            scheduleFocusSync();
+            return true;
+        };
+
+        window.addEventListener('pointerdown', closePromptWorkspaceFromScrim, true);
+
         // This runs before document-level native drawer handlers. It also covers the welcome
         // page's .drawer-opener shortcuts, so every themed entry takes the same fast path.
         window.addEventListener('click', async (event) => {
             const target = event.target instanceof Element ? event.target : null;
+            if (closePromptWorkspaceFromScrim(event)) {
+                return;
+            }
+
             const match = resolveThemePanelTrigger(target);
             if (!match) {
                 return;

@@ -6205,7 +6205,7 @@ body.no-blur :is(#left-nav-panel, #rm_api_block, #AdvancedFormatting, #Backgroun
 body > :not(#bg1):not(#top-bar):not(#top-settings-holder):not(#options):not(#extensionsMenu):not(#xy-focus-scrim):not(#xy-vessel-hub):not(#xy-vessel-exit-popover):not(.select2-container):not(.ui-front):not(#xy-select-popover):not(#shadow_popup):not(#dialogue_popup):not(.TH-popup):not(dialog):not(script):not(style):not(link) {
 }
 
-body.xy-focus-mode > :not(#bg1):not(#top-bar):not(#top-settings-holder):not(#options):not(#extensionsMenu):not(#xy-focus-scrim):not(#xy-vessel-hub):not(#xy-vessel-exit-popover):not(#AdvancedFormatting):not(.select2-container):not(.ui-front):not(#xy-select-popover):not(#shadow_popup):not(#dialogue_popup):not(.TH-popup):not(dialog):not(script):not(style):not(link) {
+body.xy-focus-mode > :not(#bg1):not(#top-bar):not(#top-settings-holder):not(#options):not(#extensionsMenu):not(#xy-focus-scrim):not(#xy-vessel-hub):not(#xy-vessel-exit-popover):not(#AdvancedFormatting):not(.select2-container):not(.ui-front):not(#xy-select-popover):not(#shadow_popup):not(#dialogue_popup):not(.TH-popup):not([name="templatesAndPopupsWrapper"]:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"])):not(dialog):not(script):not(style):not(link) {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
