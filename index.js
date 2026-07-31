@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.4';
+    const EXTENSION_VERSION = '1.0.5';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
@@ -56,6 +56,7 @@
         pixelSnow: new URL('assets/pixel-snow.js?v=1.2.0', import.meta.url).href,
         sidebarGrainient: new URL('assets/grainient-sidebar.js?v=1.6.0', import.meta.url).href,
         genderDialogue: new URL('assets/gender-dialogue.js?v=1.0.4', import.meta.url).href,
+        floatingBallDock: new URL('assets/floating-ball-dock.js?v=1.0.13', import.meta.url).href,
     };
     const PANEL_SELECTOR = [
         '#left-nav-panel',
@@ -85,6 +86,7 @@
     let aiSnapshot = null;
     let pendingPanelId = null;
     let activeFocusPanelId = null;
+    let aiPromptEditorStateObserver = null;
     let searchableSelectsPromise = null;
     let composerGsapPromise = null;
     let focusSyncFrame = null;
@@ -133,6 +135,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     let sidebarTween = null;
     let genderDialoguePromise = null;
     let genderDialoguePromptEventsBound = false;
+    let floatingBallDockPromise = null;
     const MESSAGE_META_MESSAGE_SELECTOR = '.mes[mesid]:not(.smallSysMes):not([type="welcome_prompt"])';
     const MESSAGE_META_RELEVANT_NODE_SELECTOR = '.timestamp, .tokenCounterDisplay, .mes_timer, .mes_block, .mes_header, .ch_name';
     const MESSAGE_META_BATCH_SIZE = 6;
@@ -177,6 +180,19 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             dialogueModule?.bindGenderDialogueRenderer();
             return dialogueModule;
         });
+    }
+
+    function ensureFloatingBallDock() {
+        if (!floatingBallDockPromise) {
+            floatingBallDockPromise = import(ASSETS.floatingBallDock)
+                .then((dockModule) => dockModule.mountFloatingBallDock())
+                .catch((error) => {
+                    floatingBallDockPromise = null;
+                    console.warn('[玄尘渡] 悬浮球收纳模块加载失败。', error);
+                    return null;
+                });
+        }
+        return floatingBallDockPromise;
     }
 
     function normalizeRecentSearch(value) {
@@ -320,15 +336,20 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                 gsap.to(placeholder, {
                     opacity: 1,
                     '--xy-composer-placeholder-blur': '0px',
-                    duration: 1.2,
+                    duration: .32,
                     ease: 'power2.out',
                     overwrite: 'auto',
+                    onComplete: () => {
+                        if (placeholderVisible) {
+                            setPlaceholderVisibility(true);
+                        }
+                    },
                 });
             } else {
                 gsap.to(placeholder, {
                     opacity: 0,
                     '--xy-composer-placeholder-blur': '4px',
-                    duration: 1,
+                    duration: .24,
                     ease: 'power2.in',
                     overwrite: 'auto',
                     onComplete: () => {
@@ -358,8 +379,8 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                 control.classList.add('xy-composer-action');
                 gsap.set(control, { transformOrigin: '50% 50%', force3D: true });
                 const settle = (active) => gsap.to(control, active
-                    ? { y: -1.5, scale: 1.045, duration: .18, ease: 'power2.out', overwrite: 'auto' }
-                    : { y: 0, scale: 1, duration: .2, ease: 'power1.out', overwrite: 'auto' });
+                    ? { y: -1.5, scale: 1.045, duration: .12, ease: 'power2.out', overwrite: 'auto' }
+                    : { y: 0, scale: 1, duration: .14, ease: 'power1.out', overwrite: 'auto' });
                 control.addEventListener('pointerenter', () => settle(true));
                 control.addEventListener('pointerleave', () => settle(false));
                 control.addEventListener('focusin', () => settle(true));
@@ -808,7 +829,10 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         heroActions.forEach((action) => action.classList.add('xy-home-action-3d'));
         headerActions.forEach((action) => action.classList.add('xy-home-header-action-3d'));
         recentActions.forEach((action) => action.classList.add('xy-recent-action-3d'));
-        cards.forEach((card) => card.classList.add('xy-recent-depth-card'));
+        cards.forEach((card) => {
+            card.classList.add('xy-recent-depth-card', 'xy-recent-depth-muted');
+            card.style.opacity = '.48';
+        });
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const visibleCards = new Set();
@@ -831,12 +855,13 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             const affected = getAffectedCards(next);
             affected.forEach((card) => {
                 const focused = card === next;
+                const muted = !focused;
                 card.classList.toggle('xy-recent-depth-active', focused);
-                card.classList.toggle('xy-recent-depth-muted', Boolean(next) && !focused);
+                card.classList.toggle('xy-recent-depth-muted', muted);
                 card.classList.add('xy-recent-depth-animating');
                 gsap.killTweensOf(card);
                 gsap.to(card, {
-                    opacity: focused ? 1 : next ? .48 : 1,
+                    opacity: focused ? 1 : .48,
                     duration: focused ? .2 : .16,
                     ease: focused ? 'power2.out' : 'power1.out',
                     overwrite: 'auto',
@@ -2542,7 +2567,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             const hidden = nextMode === 'hidden';
             control.setAttribute('aria-pressed', String(hidden));
             control.setAttribute('aria-label', hidden ? '展开功能栏' : '隐藏功能栏');
-            control.title = hidden ? '展开功能栏' : '隐藏功能栏';
+            control.removeAttribute('title');
             let arrow = control.querySelector('.xy-sidebar-toggle__icon');
             if (!(arrow instanceof HTMLElement)) {
                 control.innerHTML = '<span class="xy-sidebar-toggle__glyph" aria-hidden="true"><i class="xy-sidebar-toggle__icon fa-solid fa-angles-right"></i></span>';
@@ -2572,6 +2597,37 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         sidebarTween?.forEach((animation) => animation.cancel());
         sidebarTween = null;
         clearSidebarAnimationState(holder);
+    }
+
+    function suppressSidebarNativeTooltips(holder) {
+        if (!(holder instanceof HTMLElement)) {
+            return;
+        }
+        holder.querySelectorAll('[title]').forEach((element) => element.removeAttribute('title'));
+        if (holder.dataset.xySidebarTooltipBound === 'true') {
+            return;
+        }
+        holder.dataset.xySidebarTooltipBound = 'true';
+        new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.target instanceof HTMLElement) {
+                    mutation.target.removeAttribute('title');
+                    return;
+                }
+                mutation.addedNodes.forEach((node) => {
+                    if (!(node instanceof HTMLElement)) {
+                        return;
+                    }
+                    node.removeAttribute('title');
+                    node.querySelectorAll('[title]').forEach((element) => element.removeAttribute('title'));
+                });
+            });
+        }).observe(holder, {
+            attributes: true,
+            attributeFilter: ['title'],
+            childList: true,
+            subtree: true,
+        });
     }
 
     function getSidebarTravel(holder, root = document.documentElement) {
@@ -2680,6 +2736,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         }
 
         holder.classList.add('xy-sidebar-holder');
+        suppressSidebarNativeTooltips(holder);
         holder.querySelectorAll(':scope > .drawer').forEach((drawer) => {
             const panel = drawer.querySelector(PANEL_SELECTOR);
             const meta = panel ? PANEL_META[panel.id] : null;
@@ -3067,6 +3124,45 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         scrim.querySelector('.xy-focus-paper-card')?.remove();
     }
 
+    function syncAiPromptEditorState() {
+        const panel = document.querySelector(AI_PANEL_SELECTOR);
+        const workspace = document.getElementById('xy-focus-workspace');
+        const popup = document.getElementById('completion_prompt_manager_popup');
+        const editArea = document.getElementById('completion_prompt_manager_popup_edit');
+        const isAiWorkspaceOpen = activeFocusPanelId === 'left-nav-panel'
+            && panelIsOpen(panel)
+            && workspace?.dataset.xyFocusWorkspaceState !== 'closed';
+        const isNativeEditorOpen = popup instanceof HTMLElement
+            && editArea instanceof HTMLElement
+            && popup.classList.contains('openDrawer')
+            && editArea.style.display !== 'none';
+        const shouldUseFocusEditor = isAiWorkspaceOpen && isNativeEditorOpen;
+
+        setClassState(popup, 'xy-ai-prompt-editor', shouldUseFocusEditor);
+        setClassState(document.body, 'xy-ai-prompt-editor-open', shouldUseFocusEditor);
+    }
+
+    function bindAiPromptEditorState() {
+        const popup = document.getElementById('completion_prompt_manager_popup');
+        const editArea = document.getElementById('completion_prompt_manager_popup_edit');
+        if (!(popup instanceof HTMLElement) || !(editArea instanceof HTMLElement)) {
+            window.setTimeout(bindAiPromptEditorState, 500);
+            return;
+        }
+
+        aiPromptEditorStateObserver?.disconnect();
+        aiPromptEditorStateObserver = new MutationObserver(syncAiPromptEditorState);
+        aiPromptEditorStateObserver.observe(popup, {
+            attributes: true,
+            attributeFilter: ['class', 'style'],
+        });
+        aiPromptEditorStateObserver.observe(editArea, {
+            attributes: true,
+            attributeFilter: ['style'],
+        });
+        syncAiPromptEditorState();
+    }
+
     function enterFocusMode(panel) {
         const meta = panel ? PANEL_META[panel.id] : null;
         if (!meta) {
@@ -3092,6 +3188,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                 ensureFocusPresentation(scrim, meta.focus);
             }
             applySide();
+            syncAiPromptEditorState();
             return;
         }
         // Keep the chat or welcome page beneath the workspace for the entire session.
@@ -3114,9 +3211,13 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                 }
             });
         }
+        syncAiPromptEditorState();
     }
 
     function leaveFocusMode() {
+        document.querySelector('#completion_prompt_manager_popup.xy-ai-prompt-editor')
+            ?.classList.remove('xy-ai-prompt-editor');
+        document.body.classList.remove('xy-ai-prompt-editor-open');
         if (!document.body.classList.contains('xy-focus-mode')
             && !document.body.classList.contains('xy-focus-revealing')) {
             return;
@@ -3641,7 +3742,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         const eventPath = event.composedPath();
         const extensionsPanel = document.querySelector('#rm_extensions_block');
 
-        if (target?.closest('#xy-sidebar-toggle, #xy-vessel-hub')) {
+        if (target?.closest('#xy-sidebar-toggle, #xy-vessel-hub, #xy-floating-ball-dock, #xy-floating-ball-capture-layer')) {
             return;
         }
 
@@ -3734,7 +3835,45 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             && !(field.classList.contains('mes_timer') && body.classList.contains('no-timer'));
     }
 
+    function formatCloudNoteNumber(value) {
+        const number = Math.max(0, Math.trunc(Number(value) || 0));
+        const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+        const units = ['', '十', '百', '千'];
+        const formatSection = (section) => {
+            let result = '';
+            let needsZero = false;
+            for (let index = 3; index >= 0; index -= 1) {
+                const divisor = 10 ** index;
+                const digit = Math.floor(section / divisor) % 10;
+                if (digit > 0) {
+                    if (needsZero && result) {
+                        result += digits[0];
+                    }
+                    result += `${digits[digit]}${units[index]}`;
+                    needsZero = false;
+                } else if (result) {
+                    needsZero = true;
+                }
+            }
+            return result || digits[0];
+        };
+        if (number < 10000) {
+            return formatSection(number);
+        }
+        const high = Math.floor(number / 10000);
+        const low = number % 10000;
+        return `${formatSection(high)}万${low ? `${low < 1000 ? digits[0] : ''}${formatSection(low)}` : ''}`;
+    }
+
+    function syncCloudNoteNumber(message) {
+        const messageId = Number(message.getAttribute('mesid'));
+        if (Number.isInteger(messageId) && messageId >= 0) {
+            message.dataset.xyMessageNote = formatCloudNoteNumber(messageId + 1);
+        }
+    }
+
     function syncMessageMetaCard(message) {
+        syncCloudNoteNumber(message);
         const block = message.querySelector(':scope > .mes_block');
         if (!(block instanceof HTMLElement)) {
             return;
@@ -3788,6 +3927,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
 
             const messages = [...messageMetaPendingMessages];
             messageMetaPendingMessages.clear();
+            messages.forEach(syncCloudNoteNumber);
             messages.slice(0, MESSAGE_META_BATCH_SIZE).forEach((message) => {
                 if (isMessageMetaMessage(message, chat)) {
                     syncMessageMetaCard(message);
@@ -3964,12 +4104,14 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     ensureSidebar();
     ensureSidebarGrainient();
     ensureFocusScrim();
+    bindAiPromptEditorState();
     ensureSearchableSelects();
     bindWorldbookShortcuts();
     ensureComposerPlaceholder();
     ensureComposerEffects();
     ensureComposerMenuAlignment();
     void ensureGenderDialogue();
+    void ensureFloatingBallDock();
     syncHomePixelSnow();
     ensureWelcomeHome();
     bindMessageMetaCards();

@@ -1,10 +1,10 @@
-@import url("./theme.css?v=1.0.4");
+@import url("./theme.css?v=1.0.11");
 
 /* 以独立资源层覆盖旧主题缓存：保留宣纸纹理，仅将最近聊天调整为蓝白渐变。 */
 body.bubblechat #chat:has(> .welcomePanel) .welcomePanel .recentChatList > .recentChat.recentChat {
   border-color: rgba(231, 241, 243, .68) !important;
   background-color: #9bbbc5 !important;
-  background-image:
+  background:
     linear-gradient(135deg, rgba(249, 252, 251, .18) 0%, rgba(205, 229, 234, .16) 46%, rgba(113, 163, 181, .3) 100%),
     url("./assets/home-chat-xuan-paper.png") !important;
   background-position: center, center !important;
@@ -170,20 +170,20 @@ body input[type="checkbox"]:not(.mes_checkbox):not(.del_checkbox):disabled {
   }
 }
 
-/* 提示词编辑器由酒馆原生 openDrawer 状态驱动，避免接管点击事件或保存流程。 */
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #xy-focus-scrim .xy-focus-paper-card {
+/* 原生表单仍负责编辑与保存；扩展状态类只把打开的表单承载到右侧工作区。 */
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #xy-focus-scrim .xy-focus-paper-card {
   visibility: hidden;
   opacity: 0;
 }
 
 /* 功能页会隐藏 body 的普通直属子层；提示词编辑器位于酒馆共用的模板容器中，打开时需恢复该父层。 */
-body.xy-focus-mode > [name="templatesAndPopupsWrapper"]:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) {
+body.xy-focus-mode.xy-ai-prompt-editor-open > [name="templatesAndPopupsWrapper"] {
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup.openDrawer {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor {
   position: fixed !important;
   z-index: 6500 !important;
   inset: var(--xy-function-panel-vertical-inset) 5dvw var(--xy-function-panel-vertical-inset) calc(50dvw + 10px) !important;
@@ -209,7 +209,7 @@ body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_p
   box-shadow: 0 20px 46px rgba(2, 10, 14, .38) !important;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup_edit {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor #completion_prompt_manager_popup_edit {
   flex: 1 1 auto;
   min-height: 0;
   padding: 22px 24px !important;
@@ -222,7 +222,7 @@ body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_p
   scrollbar-color: rgba(186, 170, 118, .38) transparent;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup_edit > h3 {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor #completion_prompt_manager_popup_edit > h3 {
   margin: 0 0 18px !important;
   padding: 0 0 11px;
   border-bottom: 1px solid rgba(190, 170, 116, .28);
@@ -232,30 +232,30 @@ body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_p
   line-height: 1.25;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
   border-color: rgba(140, 161, 147, .48) !important;
   color: #e0e5dc !important;
   background-color: rgba(4, 14, 18, .78) !important;
   box-shadow: inset 0 1px 0 rgba(211, 226, 218, .05);
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
   border-color: rgba(206, 190, 132, .74) !important;
   box-shadow: 0 0 0 2px rgba(186, 171, 119, .12), inset 0 1px 0 rgba(224, 234, 225, .07) !important;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup_entry_form_prompt {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor #completion_prompt_manager_popup_entry_form_prompt {
   line-height: 1.65;
   background-image: linear-gradient(180deg, rgba(18, 39, 43, .24), transparent 180px) !important;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) .completion_prompt_manager_popup_entry_form_footer {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor .completion_prompt_manager_popup_entry_form_footer {
   margin: 12px 0 0 !important;
   padding: 12px 0 0;
   border-top: 1px solid rgba(188, 169, 114, .24);
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) .completion_prompt_manager_popup_entry_form_footer .menu_button {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor .completion_prompt_manager_popup_entry_form_footer .menu_button {
   min-height: 38px;
   border: 1px solid rgba(151, 167, 148, .38) !important;
   border-radius: 3px !important;
@@ -263,18 +263,347 @@ body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_p
   background: rgba(14, 35, 39, .86) !important;
 }
 
-body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup_entry_form_save {
+body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor #completion_prompt_manager_popup_entry_form_save {
   border-color: rgba(205, 188, 130, .66) !important;
   color: #f0e4bc !important;
   background: linear-gradient(180deg, rgba(70, 108, 94, .94), rgba(29, 63, 59, .96)) !important;
 }
 
 @media (max-width: 980px) {
-  body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup.openDrawer {
+  body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor {
     inset: 14px 14px 14px calc(var(--xy-sidebar-current-width) + 14px) !important;
   }
 
-  body.xy-focus-mode:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"]) #completion_prompt_manager_popup_edit {
+  body:is(.xy-focus-mode, .xy-focus-revealing).xy-ai-prompt-editor-open #completion_prompt_manager_popup.xy-ai-prompt-editor #completion_prompt_manager_popup_edit {
     padding: 18px !important;
+  }
+}
+
+/* 右侧悬浮球沿用左侧栏的山门材质，仅以细金边收束轮廓。 */
+#xy-floating-ball-dock {
+  --xy-floating-dock-size: 64px;
+  --xy-floating-dock-action-height: 42px;
+  /* Match the final left-sidebar toggle dimensions. */
+  --xy-floating-dock-toggle-width: clamp(34px, 2.6vw, 38px);
+  --xy-floating-dock-toggle-height: clamp(68px, 9.5dvh, 78px);
+  --xy-floating-dock-border: rgba(205, 188, 134, .34);
+  position: fixed;
+  z-index: 7200;
+  top: 50%;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: var(--xy-floating-dock-size);
+  min-width: var(--xy-floating-dock-size);
+  min-height: var(--xy-floating-dock-toggle-height);
+  border: 1px solid var(--xy-floating-dock-border);
+  border-radius: 8px 0 0 8px;
+  background:
+    linear-gradient(180deg, rgba(7, 16, 18, .88), rgba(10, 24, 27, .8)),
+    linear-gradient(90deg, rgba(6, 13, 16, .56), transparent 74%),
+    url("./assets/home-xuanchendu-cloud-gate-v2.png") center / cover no-repeat;
+  background-blend-mode: normal, normal, luminosity;
+  box-shadow: none;
+  transform: translate(0, -50%);
+  isolation: isolate;
+}
+
+#xy-floating-ball-dock[data-xy-floating-ball-mode="hidden"] {
+  transform: translate(100%, -50%);
+}
+
+#xy-floating-ball-dock[data-xy-floating-ball-animating="true"] {
+  will-change: transform;
+}
+
+#xy-floating-ball-dock.xy-floating-ball-dock--has-balls {
+  min-height: 0;
+  padding: 0;
+}
+
+#xy-floating-ball-dock:not(.xy-floating-ball-dock--has-balls) {
+  height: var(--xy-floating-dock-toggle-height);
+}
+
+#xy-floating-ball-dock .xy-floating-ball-dock__list {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+#xy-floating-ball-dock .xy-floating-ball-dock__list:empty {
+  display: none;
+}
+
+#xy-floating-ball-dock.xy-floating-ball-dock--scrolling .xy-floating-ball-dock__list {
+  max-height: min(68dvh, calc(100dvh - 104px));
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#xy-floating-ball-dock.xy-floating-ball-dock--scrolling .xy-floating-ball-dock__list::-webkit-scrollbar {
+  display: none;
+}
+
+#xy-floating-ball-dock .xy-floating-ball-slot {
+  position: relative;
+  flex: 0 0 var(--xy-floating-dock-size);
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--xy-floating-dock-size);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: background-color .16s ease, box-shadow .16s ease;
+}
+
+#xy-floating-ball-dock .xy-floating-ball-slot:first-child {
+  border-radius: 7px 0 0 0;
+}
+
+#xy-floating-ball-dock .xy-floating-ball-slot:is(:hover, :focus-within) {
+  background: rgba(208, 194, 146, .075);
+  box-shadow: inset 0 0 18px rgba(197, 216, 205, .055);
+}
+
+#xy-floating-ball-dock .xy-floating-ball-style-context {
+  display: contents !important;
+}
+
+#xy-floating-ball-toggle-button {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--xy-floating-dock-toggle-width) * -1);
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--xy-floating-dock-toggle-width);
+  min-width: var(--xy-floating-dock-toggle-width);
+  height: var(--xy-floating-dock-toggle-height);
+  min-height: var(--xy-floating-dock-toggle-height);
+  padding: 0;
+  isolation: isolate;
+  border: 0;
+  border-radius: 0;
+  color: rgba(214, 221, 211, .78);
+  background: transparent;
+  box-shadow: none;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+#xy-floating-ball-toggle-button::before {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--xy-floating-dock-border);
+  border-right: 0;
+  border-radius: 7px 0 0 7px;
+  background:
+    linear-gradient(180deg, rgba(7, 16, 18, .88), rgba(10, 24, 27, .8)),
+    linear-gradient(90deg, rgba(6, 13, 16, .56), transparent 74%),
+    url("./assets/home-xuanchendu-cloud-gate-v2.png") 34% center / cover no-repeat;
+  background-blend-mode: normal, normal, luminosity;
+  box-shadow: none;
+  content: '';
+  pointer-events: none;
+}
+
+#xy-floating-ball-toggle-button .xy-sidebar-toggle__icon {
+  color: inherit;
+  font-size: 15px;
+  transform: rotate(0deg);
+}
+
+#xy-floating-ball-dock[data-xy-floating-ball-mode="expanded"] #xy-floating-ball-toggle-button .xy-sidebar-toggle__icon {
+  transform: rotate(180deg);
+}
+
+#xy-floating-ball-toggle-button:is(:hover, :focus-visible) {
+  color: #e5d6a8;
+  background: transparent;
+  outline: none;
+}
+
+#xy-floating-ball-toggle-button:is(:hover, :focus-visible)::before {
+  border-color: rgba(222, 202, 142, .62);
+  background:
+    linear-gradient(rgba(208, 194, 146, .075), rgba(208, 194, 146, .075)),
+    linear-gradient(180deg, rgba(7, 16, 18, .88), rgba(10, 24, 27, .8)),
+    linear-gradient(90deg, rgba(6, 13, 16, .56), transparent 74%),
+    url("./assets/home-xuanchendu-cloud-gate-v2.png") 42% center / cover no-repeat;
+  background-blend-mode: normal, normal, normal, luminosity;
+}
+
+#xy-floating-ball-toggle-button:is(:hover, :focus-visible) .xy-sidebar-toggle__icon {
+  color: #e5d6a8;
+}
+
+#xy-floating-ball-dock .xy-floating-ball-slot [data-xy-floating-ball-captured="true"] {
+  max-width: none !important;
+  max-height: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+#xy-floating-ball-dock .xy-floating-ball-dock__actions {
+  display: grid;
+  flex: 0 0 var(--xy-floating-dock-action-height);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--xy-floating-dock-action-height);
+  min-height: var(--xy-floating-dock-action-height);
+  overflow: visible;
+  border: 0;
+  border-top: 0;
+  border-radius: 0 0 0 7px;
+  background: transparent;
+  transition: background-color .16s ease, box-shadow .16s ease;
+}
+
+#xy-floating-ball-dock:not(.xy-floating-ball-dock--has-balls) .xy-floating-ball-dock__actions {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  border-top: 0;
+  border-radius: 7px 0 0 7px;
+}
+
+#xy-floating-ball-capture-button,
+#xy-floating-ball-release-all-button {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: rgba(214, 221, 211, .76);
+  background: transparent;
+  transition: background-color .16s ease, box-shadow .16s ease, color .16s ease;
+  cursor: crosshair;
+}
+
+#xy-floating-ball-release-all-button {
+  cursor: pointer;
+}
+
+#xy-floating-ball-release-all-button:disabled {
+  cursor: not-allowed;
+  opacity: .28;
+}
+
+#xy-floating-ball-toggle-button::after,
+#xy-floating-ball-dock .xy-floating-ball-dock__actions > button::after {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: 200px;
+  padding: 6px 8px;
+  border: 1px solid rgba(194, 176, 118, .34);
+  border-radius: 3px;
+  color: rgba(239, 237, 218, .94);
+  background: rgba(7, 19, 23, .96);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .3);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(0, 4px);
+  transition: opacity .14s ease, transform .14s ease;
+  visibility: hidden;
+  white-space: normal;
+}
+
+#xy-floating-ball-toggle-button:is(:hover, :focus-visible)::after,
+#xy-floating-ball-dock .xy-floating-ball-dock__actions > button:not(:disabled):is(:hover, :focus-visible)::after {
+  opacity: 1;
+  transform: translate(0, 0);
+  visibility: visible;
+}
+
+#xy-floating-ball-capture-button:is(:hover, :focus-visible),
+#xy-floating-ball-release-all-button:not(:disabled):is(:hover, :focus-visible) {
+  color: #e5d6a8;
+  background: rgba(208, 194, 146, .075);
+  box-shadow: inset 0 0 14px rgba(197, 216, 205, .045);
+  outline: none;
+}
+
+#xy-floating-ball-capture-button i,
+#xy-floating-ball-release-all-button i {
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+  -webkit-text-stroke: .25px rgba(5, 15, 17, .82);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .48));
+}
+
+#xy-floating-ball-capture-button[aria-pressed="true"] {
+  color: #e5d6a8;
+  background: transparent;
+}
+
+#xy-floating-ball-capture-button[aria-pressed="true"] {
+  color: #ead39a;
+  box-shadow: inset 0 0 0 1px rgba(224, 204, 145, .32);
+}
+
+#xy-floating-ball-capture-layer {
+  position: fixed;
+  z-index: 2147483647;
+  inset: 0;
+  cursor: crosshair;
+  background: rgba(2, 8, 11, .1);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#xy-floating-ball-capture-layer .xy-floating-ball-capture-highlight {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: var(--xy-capture-width);
+  height: var(--xy-capture-height);
+  border: 2px solid rgba(232, 211, 149, .96);
+  border-radius: 6px;
+  background: rgba(214, 194, 135, .08);
+  box-shadow: 0 0 0 2px rgba(4, 13, 16, .6), 0 0 16px rgba(222, 201, 141, .3);
+  transform: translate3d(var(--xy-capture-x), var(--xy-capture-y), 0);
+  pointer-events: none;
+}
+
+#xy-floating-ball-capture-layer .xy-floating-ball-capture-highlight[hidden] {
+  display: none;
+}
+
+[data-xy-floating-popup-managed="true"] {
+  pointer-events: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #xy-floating-ball-dock,
+  #xy-floating-ball-dock * {
+    transition: none !important;
   }
 }
