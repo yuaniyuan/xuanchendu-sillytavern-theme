@@ -66,10 +66,16 @@
   --xy-card-border-strong: rgba(226, 227, 216, .18);
   --xy-card-user-border: rgba(183, 165, 119, .24);
   --xy-card-text: #e4e3da;
+  --xy-body-text: #d8e5df;
   --xy-card-text-soft: #aeb8b5;
   --xy-card-gold: #a88b52;
   --xy-card-gold-bright: #ccb477;
-  --xy-card-quote: #a7c4d8;
+  --xy-card-quote: #e0a6b8;
+  --xy-card-dialogue-male: #98c9e6;
+  --xy-card-dialogue-user: #f0a15a;
+  --xy-card-reference: #d6c78f;
+  --xy-card-reference-bg: rgba(204, 180, 119, .09);
+  --xy-card-reference-line: rgba(214, 199, 143, .48);
   --xy-card-shadow: rgba(4, 13, 16, .18);
 }
 
@@ -295,7 +301,7 @@ body.bubblechat:not(.xy-focus-mode) #chat .mes[is_user="true"] .name_text {
   color: var(--xy-card-gold-bright) !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat .mes[is_user="false"]:not([is_system="true"]) .name_text {
+body.bubblechat:not(.xy-focus-mode) #chat .mes[is_user="false"] .name_text {
   color: var(--xy-card-text) !important;
 }
 
@@ -397,7 +403,40 @@ body.bubblechat:not(.xy-focus-mode) #chat :is(.mes_text, .mes_reasoning) a {
 }
 
 body.bubblechat:not(.xy-focus-mode) #chat :is(.mes_text, .mes_reasoning) q {
-  color: var(--xy-card-quote);
+  padding: .02em .14em .06em;
+  border-bottom: 1px solid var(--xy-card-reference-line);
+  border-radius: 2px;
+  color: var(--xy-card-reference);
+  background: var(--xy-card-reference-bg);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+body.bubblechat #chat .mes_text .xy-dialogue--female,
+body.bubblechat #chat .mes_text .xy-dialogue--female q {
+  color: var(--xy-card-quote) !important;
+}
+
+body.bubblechat #chat .mes_text .xy-dialogue--male,
+body.bubblechat #chat .mes_text .xy-dialogue--male q {
+  color: var(--xy-card-dialogue-male) !important;
+}
+
+body.bubblechat #chat .mes_text .xy-dialogue--user,
+body.bubblechat #chat .mes_text .xy-dialogue--user q {
+  color: var(--xy-card-dialogue-user) !important;
+}
+
+body.bubblechat #chat .mes_text .xy-dialogue q {
+  padding: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.bubblechat #chat .mes_text .xy-dialogue q::before,
+body.bubblechat #chat .mes_text .xy-dialogue q::after {
+  content: none;
 }
 
 body.bubblechat:not(.xy-focus-mode) #chat :is(.mes_text, .mes_reasoning) hr {
@@ -2751,13 +2790,13 @@ cursor: pointer !important;
   caret-color: #d9c88f;
 }
 
-body.xy-focus-mode .select2-dropdown .select2-search--dropdown {
+body:is(.xy-focus-mode, .xy-focus-revealing) .select2-dropdown .select2-search--dropdown {
   position: relative;
   padding: 8px;
   border-bottom: 1px solid rgba(145, 167, 151, .2);
 }
 
-body.xy-focus-mode .select2-dropdown .select2-search--dropdown::before {
+body:is(.xy-focus-mode, .xy-focus-revealing) .select2-dropdown .select2-search--dropdown::before {
   content: "\f002";
   position: absolute;
   top: 50%;
@@ -2771,7 +2810,7 @@ body.xy-focus-mode .select2-dropdown .select2-search--dropdown::before {
   pointer-events: none;
 }
 
-body.xy-focus-mode .select2-dropdown .select2-search__field {
+body:is(.xy-focus-mode, .xy-focus-revealing) .select2-dropdown .select2-search__field {
   width: 100% !important;
   min-height: 34px !important;
   padding: 6px 10px 6px 30px !important;
@@ -4214,6 +4253,15 @@ font-size: 14px !important;
   background: rgba(8, 23, 27, .42);
 }
 
+/* 正则条目的批量选择和“更多”状态仅作内部状态保存，不应被通用复选框皮肤强制显示。 */
+#rm_extensions_block #regex_container :is(.regex_bulk_checkbox, #regex_bulk_edit, input[name="regex_expand"]) {
+  display: none !important;
+}
+
+#rm_extensions_block #regex_container .regex_settings:has(#regex_bulk_edit:checked) .regex_bulk_checkbox {
+  display: inline-grid !important;
+}
+
 #rm_extensions_block #regex_container :is(
   #regex_presets_block,
   #global_scripts_block,
@@ -4338,6 +4386,32 @@ dialog.popup:has(.extensions_info) .extension_block {
   border-left: 2px solid rgba(191, 173, 117, .34);
   border-radius: 3px;
   background: rgba(6, 18, 22, .56);
+}
+
+/* SillyTavern marks an available update on the extension name itself. Highlight the
+   complete row from that native state so it always follows the actual update result. */
+dialog.popup:has(.extensions_info) .extension_block:has(.extension_name.update_available) {
+  position: relative;
+  border-color: rgba(232, 193, 83, .92) !important;
+  outline: 1px solid rgba(248, 207, 94, .78);
+  outline-offset: 0;
+  background:
+    linear-gradient(90deg, rgba(185, 137, 39, .22), rgba(76, 62, 29, .12) 56%, rgba(8, 25, 28, .46)) !important;
+}
+
+dialog.popup:has(.extensions_info) .extension_block:has(.extension_name.update_available)::before {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 0;
+  width: 3px;
+  background: #ebc45a;
+  content: "";
+  pointer-events: none;
+}
+
+dialog.popup:has(.extensions_info) .extension_name.update_available {
+  color: #f0d47a !important;
 }
 
 dialog.popup:has(.extensions_info) .extension_toggle {
@@ -4599,7 +4673,7 @@ body.xy-worldbook-mode #WorldInfo {
   max-width: calc(100dvw - 72px) !important;
   border: 1px solid rgba(190, 169, 112, .54) !important;
   border-radius: 4px !important;
-transform: translate3d(-50%, 0, 0) !important;
+  transform: translate3d(-50%, 0, 0) !important;
 }
 
 body.xy-worldbook-mode #WorldInfo.openDrawer {
@@ -6205,14 +6279,14 @@ body.no-blur :is(#left-nav-panel, #rm_api_block, #AdvancedFormatting, #Backgroun
 body > :not(#bg1):not(#top-bar):not(#top-settings-holder):not(#options):not(#extensionsMenu):not(#xy-focus-scrim):not(#xy-vessel-hub):not(#xy-vessel-exit-popover):not(.select2-container):not(.ui-front):not(#xy-select-popover):not(#shadow_popup):not(#dialogue_popup):not(.TH-popup):not(dialog):not(script):not(style):not(link) {
 }
 
-body.xy-focus-mode > :not(#bg1):not(#top-bar):not(#top-settings-holder):not(#options):not(#extensionsMenu):not(#xy-focus-scrim):not(#xy-vessel-hub):not(#xy-vessel-exit-popover):not(#AdvancedFormatting):not(.select2-container):not(.ui-front):not(#xy-select-popover):not(#shadow_popup):not(#dialogue_popup):not(.TH-popup):not([name="templatesAndPopupsWrapper"]:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"])):not(dialog):not(script):not(style):not(link) {
+body.xy-focus-mode > :not(#bg1):not(#top-bar):not(#top-settings-holder):not(#options):not(#extensionsMenu):not(#xy-focus-scrim):not(#xy-focus-workspace):not(#xy-vessel-hub):not(#xy-vessel-exit-popover):not(#AdvancedFormatting):not(.select2-container):not(.ui-front):not(#xy-select-popover):not(#shadow_popup):not(#dialogue_popup):not(.TH-popup):not([name="templatesAndPopupsWrapper"]:has(#completion_prompt_manager_popup.openDrawer #completion_prompt_manager_popup_edit[style*="display: flex"])):not(dialog):not(script):not(style):not(link) {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
 }
 
 /* 扩展页内的原生编辑弹窗必须压过半屏抽屉；同时兼容旧内核的 dialog polyfill。 */
-body.xy-focus-mode dialog.popup[open] {
+body:is(.xy-focus-mode, .xy-focus-revealing) dialog.popup[open] {
   z-index: 6000 !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -6220,8 +6294,8 @@ body.xy-focus-mode dialog.popup[open] {
 }
 
 /* 酒馆助手沿用酒馆旧式浮层：暗层是父容器，编辑窗是其子节点。 */
-body.xy-focus-mode #shadow_popup,
-body.xy-focus-mode #shadow_popup #dialogue_popup {
+body:is(.xy-focus-mode, .xy-focus-revealing) #shadow_popup,
+body:is(.xy-focus-mode, .xy-focus-revealing) #shadow_popup #dialogue_popup {
   visibility: visible !important;
   pointer-events: auto !important;
 }
@@ -6237,7 +6311,66 @@ body.xy-focus-mode #shadow_popup #dialogue_popup {
   visibility: hidden;
 }
 
-body.xy-focus-mode #xy-focus-scrim {
+#xy-focus-workspace {
+  position: fixed;
+  z-index: 3800;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--xy-focus-workspace-left);
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  isolation: isolate;
+  contain: layout;
+}
+
+body:is(.xy-focus-mode, .xy-focus-revealing) #xy-focus-workspace {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#xy-focus-workspace[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#xy-focus-workspace-stage {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+}
+
+#xy-focus-panel-slot {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 50dvw;
+  bottom: 0;
+  left: 0;
+  isolation: isolate;
+}
+
+#xy-focus-workspace-stage > :is(#xy-focus-scrim, #xy-focus-panel-slot) {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+#xy-focus-workspace[data-xy-focus-workspace-state="preparing"] > #xy-focus-workspace-stage > :is(#xy-focus-scrim, #xy-focus-panel-slot) {
+  transform: translate3d(calc(-100dvw + var(--xy-focus-workspace-left)), 0, 0);
+}
+
+#xy-focus-workspace[data-xy-focus-workspace-animating="true"] > #xy-focus-workspace-stage > :is(#xy-focus-scrim, #xy-focus-panel-slot) {
+  backface-visibility: hidden;
+}
+
+#xy-focus-workspace-stage > #xy-focus-scrim {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+}
+
+body:is(.xy-focus-mode, .xy-focus-revealing) #xy-focus-scrim {
   pointer-events: auto;
   opacity: 1;
   visibility: visible;
@@ -6245,7 +6378,7 @@ body.xy-focus-mode #xy-focus-scrim {
 }
 
 /* 普通功能页使用独立月白提亮层，避免深色水墨背景和中心宣纸同时压暗。 */
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim {
   background: rgba(226, 233, 235, .17);
 }
 
@@ -6431,6 +6564,7 @@ opacity: 1;
   --xy-function-panel-gap: clamp(6px, .55vw, 10px);
   --xy-function-panel-vertical-inset: 5dvh;
   --xy-function-surface-radius: 8px;
+  --xy-focus-workspace-left: calc(var(--xy-sidebar-expanded-width) + var(--xy-sidebar-toggle-width) + var(--xy-function-panel-gap));
   --xy-focus-paper-seal-size: min(clamp(250px, 23dvw, 380px), calc(45dvw - 24px));
   --xy-sidebar-toggle-width: clamp(34px, 2.6vw, 38px);
   --xy-workspace-width: min(
@@ -6684,7 +6818,7 @@ transform: translate3d(-10%, 0, 0) !important;
   right: 5dvw !important;
 }
 
-/* 世界书沿用宽工作台内容，但与其它功能页共用左侧起点。 */
+/* 世界书覆盖普通工作区的操作面板和右侧墨染页，条目工作区只在面板内部调整密度。 */
 body.xy-worldbook-mode #WorldInfo {
   left: calc(var(--xy-sidebar-current-width) + var(--xy-sidebar-toggle-width) + var(--xy-function-panel-gap)) !important;
   right: 5dvw !important;
@@ -7705,12 +7839,12 @@ body.bubblechat:not(.xy-focus-mode) .welcomePanel .recentChatList > .recentChat:
 }
 
 /* AI 响应配置沿用可滚动内容区，但不显示原生滚动条。 */
-body.xy-focus-mode #left-nav-panel {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
 
-body.xy-focus-mode #left-nav-panel::-webkit-scrollbar {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -8014,18 +8148,18 @@ body.bubblechat:not(.xy-focus-mode) :is(
 }
 
 /* 九个功能页共享世界书的仙门云海底板，面板本身仍保留各自的黑石纹材质。 */
-body.xy-focus-mode #bg1 {
+body:is(.xy-focus-mode, .xy-focus-revealing) #bg1 {
   background-image: url("./assets/home-xuanchendu-cloud-gate-v2.png") !important;
   background-position: center !important;
 }
 
-body.xy-focus-mode #xy-focus-scrim {
+body:is(.xy-focus-mode, .xy-focus-revealing) #xy-focus-scrim {
   background: transparent !important;
 }
 
 /* 世界书之外的八个功能页，右侧水墨板与左侧工作区共用上下留白。 */
 /* 中央题签仅在功能面板打开时挂载：旧纸覆盖水墨，保留山水从纸面浮出的层次。 */
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card {
   position: absolute;
   z-index: 1;
   top: 50%;
@@ -8048,7 +8182,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card 
 }
 
 /* 冷月白的墨色只从四角渗入，纸心留作中性月白，避免整张纸被染蓝。 */
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card::before {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card::before {
   position: absolute;
   z-index: 1;
   inset: 0;
@@ -8072,7 +8206,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card:
   mask-composite: intersect, intersect;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card::after {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card::after {
   position: absolute;
   z-index: 0;
   inset: 0;
@@ -8091,7 +8225,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card:
   mask-composite: intersect;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-copy {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-copy {
   position: relative;
   z-index: 2;
   display: flex;
@@ -8102,7 +8236,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-
   text-align: center;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-eyebrow {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-eyebrow {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8113,8 +8247,8 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-
   white-space: nowrap;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-eyebrow::before,
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-eyebrow::after {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-eyebrow::before,
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-eyebrow::after {
   width: clamp(18px, 2.1dvw, 32px);
   height: 1px;
   background: currentColor;
@@ -8122,7 +8256,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-
   opacity: .38;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-title {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-title {
   margin: clamp(10px, 1.8dvh, 18px) 0;
   color: rgba(105, 62, 80, .92);
   font-size: clamp(22px, 2.6dvw, 48px);
@@ -8130,7 +8264,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-
   white-space: nowrap;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-hint {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-hint {
   width: min(100%, 250px);
   padding-top: clamp(10px, 1.8dvh, 18px);
   border-top: 1px solid currentColor;
@@ -8139,7 +8273,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card-
   opacity: .86;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim::after {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim::after {
   position: absolute;
   z-index: 0;
   top: var(--xy-function-panel-vertical-inset);
@@ -8852,7 +8986,7 @@ body.xy-worldbook-mode #WorldInfo #xy-wi-top-pagination {
 }
 
 /* 每条非系统消息在正文前生成本地山水章节横幅，不改变酒馆的消息数据或事件。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"]) > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"]) > .mes_block::before {
   box-sizing: border-box;
   display: block;
   width: 100%;
@@ -8940,7 +9074,7 @@ body.bubblechat:not(.xy-focus-mode) #chat {
   counter-reset: xy-message-note;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
   --xy-message-masthead-height: clamp(108px, 12vw, 148px);
   position: relative;
   overflow: visible;
@@ -8948,7 +9082,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   counter-increment: xy-message-note;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block {
   position: relative;
   flex: 1 1 100%;
   width: 100% !important;
@@ -8960,7 +9094,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
 }
 
 /* 原横幅继续提供本地山水图，标题由父消息的递增计数器绘制。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   width: 100%;
   max-width: none;
   height: var(--xy-message-masthead-height);
@@ -8970,7 +9104,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   content: "";
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
   position: absolute;
   z-index: 4;
   top: 0;
@@ -8991,13 +9125,13 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
 }
 
 /* 用户的“显示消息楼层”开关同时控制主题绘制的云笺编号。 */
-body.no-mesIDDisplay.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
+body.no-mesIDDisplay.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
   display: none;
   content: none;
 }
 
 /* 横幅末端的引文式署名，使用主题书写字体，与居中的云笺层级分离。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::after {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::after {
   position: absolute;
   z-index: 4;
   top: 11px;
@@ -9014,7 +9148,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
 }
 
 /* 头像脱离左侧栏，作为横幅右下的悬印；旧楼层与计数显示由云笺编号替代。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   position: absolute;
   z-index: 7;
   top: calc(var(--xy-message-masthead-height) - 62px);
@@ -9026,12 +9160,12 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   padding: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper :is(.mesIDDisplay, .mes_timer, .tokenCounterDisplay) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper :is(.mesIDDisplay, .mes_timer, .tokenCounterDisplay) {
   display: none !important;
 }
 
 /* 落款栏为下挂时间签预留空间，署名和原生操作仍保持在酒馆自己的节点中。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
   position: absolute;
   z-index: 5;
   top: calc(var(--xy-message-masthead-height) - 50px);
@@ -9048,7 +9182,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   background: rgba(6, 18, 23, .58);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
   position: absolute;
   z-index: 8;
   top: 64px;
@@ -9075,20 +9209,20 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   white-space: nowrap;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
   font-family: "玄尘渡鸿蒙黑体", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
   font-size: 16px;
   letter-spacing: .04em;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name :is(.mes_buttons, .mes_edit_buttons) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name :is(.mes_buttons, .mes_edit_buttons) {
   z-index: 1;
   align-items: center;
   gap: 4px;
   margin-left: auto;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .mes_buttons .mes_button {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .mes_buttons .mes_button {
   display: grid;
   width: 28px;
   min-width: 28px;
@@ -9102,15 +9236,15 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   opacity: 1;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .mes_buttons .mes_button:hover,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .mes_buttons .mes_button:focus-visible {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .mes_buttons .mes_button:hover,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .mes_buttons .mes_button:focus-visible {
   color: rgba(239, 243, 233, .96);
   border-color: rgba(209, 185, 121, .38);
   background: rgba(205, 219, 211, .1);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
   position: absolute;
   top: -18px;
   width: 1px;
@@ -9119,31 +9253,31 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   content: "";
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before {
   left: 12px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
   right: 12px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name + :is(.mes_reasoning_details, .mes_text) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name + :is(.mes_reasoning_details, .mes_text) {
   margin-top: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
   margin-top: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_reasoning_details {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_reasoning_details {
   margin-top: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_reasoning_details + .mes_text {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_reasoning_details + .mes_text {
   margin-top: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
   min-height: 112px;
   padding: 20px 22px 28px;
   line-height: 1.72;
@@ -9155,35 +9289,35 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
     --xy-message-masthead-height: 108px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
     height: 36px;
     font-size: 11px;
     letter-spacing: .14em;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::after {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::after {
     top: 12px;
     right: 8px;
     font-size: 8px;
     letter-spacing: .05em;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
     margin-bottom: 52px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
     top: calc(var(--xy-message-masthead-height) - 52px);
     right: 12px;
     transform: scale(.9);
     transform-origin: right center;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
     top: calc(var(--xy-message-masthead-height) - 44px);
     min-height: 44px;
     height: 44px;
@@ -9191,7 +9325,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
     padding: 8px 72px 8px 13px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
     top: 58px;
     height: 34px;
     padding-inline: 10px;
@@ -9199,104 +9333,104 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
     transform-origin: 50% -16px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before,
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before,
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
     top: -16px;
     height: 16px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
     min-height: 100px;
     padding: 16px 15px 22px;
     line-height: 1.68;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] :is(.mes_text, .mes_reasoning_details) {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] :is(.mes_text, .mes_reasoning_details) {
     margin-top: 0;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_reasoning_details + .mes_text {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_reasoning_details + .mes_text {
     margin-top: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
     animation: none !important;
     transform: translateX(-50%) rotate(0deg);
   }
 }
 
 /* AI 回卷：图三右侧人物与用户图一形成对望，署名和印记随之镜像。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
   border-color: rgba(190, 209, 205, .3) !important;
   background-color: rgba(10, 30, 37, .9) !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   background:
     linear-gradient(to bottom, rgba(7, 20, 27, .84) 0 42px, rgba(7, 20, 27, .08) 42px 100%),
     linear-gradient(270deg, rgba(7, 20, 27, .3), rgba(7, 20, 27, .05)),
     url("./assets/chat-message-banner-assistant.jpg") center 53% / cover no-repeat;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
   color: rgba(225, 235, 230, .92);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   right: auto;
   left: 16px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
   padding-right: 18px;
   padding-left: 88px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
   order: 3;
   flex: 0 1 auto;
   justify-content: flex-end;
   margin-left: auto;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
   order: 1;
   margin-right: auto;
   margin-left: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_edit_buttons {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_edit_buttons {
   order: 2;
   margin-left: 4px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
   color: rgba(228, 237, 230, .94) !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp {
   color: rgba(220, 231, 225, .88) !important;
   border-color: rgba(197, 216, 210, .34);
   background: #102b33;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::before,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .timestamp::after {
   background: rgba(193, 214, 207, .68);
 }
 
 /* 对话元信息：时间、Token 与响应时长共享一条连续的横幅下方信息带。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
   --xy-message-avatar-size: 76px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   margin-bottom: calc(var(--xy-message-avatar-size) / 2 + 14px);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   top: calc(var(--xy-message-masthead-height) - var(--xy-message-avatar-size) / 2);
   display: grid;
   width: var(--xy-message-avatar-size);
@@ -9304,17 +9438,17 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   place-items: center;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
   width: var(--xy-message-avatar-size);
   height: var(--xy-message-avatar-size);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
   padding-right: calc(var(--xy-message-avatar-size) + 28px);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   display: inline-flex;
   align-items: stretch;
   min-height: 34px;
@@ -9335,15 +9469,15 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   white-space: nowrap;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta::-webkit-scrollbar {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta::-webkit-scrollbar {
   display: none;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta:not(:has(> :not(:empty))) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta:not(:has(> :not(:empty))) {
   display: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
   position: static !important;
   display: inline-flex !important;
   align-items: center;
@@ -9364,11 +9498,11 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   white-space: nowrap;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer):empty {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer):empty {
   display: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :not(:empty) ~ :not(:empty)::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :not(:empty) ~ :not(:empty)::before {
   width: 1px;
   height: 16px;
   margin-right: 11px;
@@ -9376,55 +9510,55 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   content: "";
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::before,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::after {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::before,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::after {
   display: none !important;
   content: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
   padding-right: 18px;
   padding-left: calc(var(--xy-message-avatar-size) + 28px);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   margin-right: 18px;
   margin-left: calc(var(--xy-message-avatar-size) + 28px);
   background: linear-gradient(264deg, rgba(8, 27, 34, .92), rgba(19, 51, 58, .76));
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
     --xy-message-avatar-size: 60px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
     margin-right: calc(var(--xy-message-avatar-size) + 18px);
     margin-left: 12px;
     font-size: 10px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
     margin-right: 12px;
     margin-left: calc(var(--xy-message-avatar-size) + 18px);
   }
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
     right: auto;
     left: 12px;
     transform-origin: left center;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
     padding-right: 13px;
     padding-left: 72px;
   }
 }
 
 /* 消息元信息固定在横幅下沿，头像与卡片分别向相反一侧对齐。 */
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] {
   --xy-message-masthead-height: clamp(108px, 12vw, 148px);
   --xy-message-avatar-size: 76px;
   position: relative;
@@ -9433,7 +9567,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   counter-increment: xy-message-note;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mes_block {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mes_block {
   position: relative;
   flex: 1 1 100%;
   width: 100% !important;
@@ -9444,12 +9578,12 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   overflow: visible;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   height: var(--xy-message-masthead-height);
   margin-bottom: 58px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   position: absolute;
   z-index: 7;
   top: calc(var(--xy-message-masthead-height) - var(--xy-message-avatar-size) / 2);
@@ -9467,8 +9601,8 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   isolation: isolate;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
   display: block;
   width: 100%;
   height: 100%;
@@ -9477,7 +9611,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   object-fit: cover;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   position: absolute;
   z-index: 6;
   top: calc(var(--xy-message-masthead-height) + 10px);
@@ -9503,7 +9637,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   white-space: nowrap;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
   position: static !important;
   display: inline-flex !important;
   align-items: center;
@@ -9525,69 +9659,69 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_syste
   white-space: nowrap;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer):empty,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta:not(:has(> :not(:empty))) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer):empty,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta:not(:has(> :not(:empty))) {
   display: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :not(:empty) ~ :not(:empty)::before,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::before,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::after {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > :not(:empty) ~ :not(:empty)::before,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::before,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta .timestamp::after {
   display: none !important;
   content: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   right: auto;
   left: 16px;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="welcome_prompt"])[mesid] .xy-message-meta {
   right: auto;
   left: calc(var(--xy-message-avatar-size) + 28px);
   background: transparent;
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] {
     --xy-message-avatar-size: 60px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mes_block::before {
     margin-bottom: 54px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
     right: 12px;
     transform: none;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
     left: 12px;
     max-width: calc(100% - var(--xy-message-avatar-size) - 30px);
     font-size: 10px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
     right: auto;
     left: 12px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:not(.smallSysMes)[is_user="false"]:not([type="welcome_prompt"])[mesid] .xy-message-meta {
     left: calc(var(--xy-message-avatar-size) + 20px);
   }
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
   overflow: hidden !important;
   border-radius: 50% !important;
   clip-path: circle(50% at 50% 50%);
   -webkit-clip-path: circle(50% at 50% 50%);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
@@ -9603,18 +9737,18 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not(
   box-shadow: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   right: auto !important;
   left: 18px !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   right: 18px !important;
   left: auto !important;
   justify-content: flex-end !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
   display: inline-flex !important;
   align-items: center !important;
   flex: 0 0 auto !important;
@@ -9631,57 +9765,57 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not(
   text-shadow: 0 1px 0 rgba(255, 251, 241, .4);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer):empty {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer):empty {
   display: none !important;
 }
 
-body.no-timestamps.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > .timestamp,
-body.no-tokenCount.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > .tokenCounterDisplay,
-body.no-timer.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > .mes_timer,
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta.xy-message-meta-empty {
+body.no-timestamps.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > .timestamp,
+body.no-tokenCount.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > .tokenCounterDisplay,
+body.no-timer.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta > .mes_timer,
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta.xy-message-meta-empty {
   display: none !important;
 }
 
-body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   display: none !important;
 }
 
-body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .ch_name {
   padding-right: 18px !important;
   padding-left: 18px !important;
 }
 
-body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   max-width: calc(100% - 36px) !important;
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
     left: 12px !important;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
     right: 12px !important;
     left: auto !important;
   }
 
-  body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .ch_name {
+  body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .ch_name {
     padding-right: 13px !important;
     padding-left: 13px !important;
   }
 
-  body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+  body.hideChatAvatars.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] .xy-message-meta {
     max-width: calc(100% - 24px) !important;
   }
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] {
   --xy-message-avatar-frame-size: calc(var(--xy-message-avatar-size) + 6px);
   --xy-message-avatar-art-inset: 7px;
   --xy-message-avatar-art-size: calc(var(--xy-message-avatar-frame-size) - var(--xy-message-avatar-art-inset) * 2);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper {
   top: calc(var(--xy-message-masthead-height) - var(--xy-message-avatar-frame-size) / 2) !important;
   width: var(--xy-message-avatar-frame-size) !important;
   height: var(--xy-message-avatar-frame-size) !important;
@@ -9691,7 +9825,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not(
   -webkit-clip-path: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar {
   position: relative !important;
   flex: 0 0 var(--xy-message-avatar-frame-size) !important;
   width: var(--xy-message-avatar-frame-size) !important;
@@ -9705,7 +9839,7 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not(
   isolation: isolate;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
+body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] > .mesAvatarWrapper > .avatar > img {
   position: absolute !important;
   z-index: 1;
   inset: var(--xy-message-avatar-art-inset) !important;
@@ -9721,26 +9855,75 @@ body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not(
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])[mesid] {
+  body.bubblechat:not(.xy-focus-mode) #chat > .mes:is(.mes):not(.smallSysMes):not([type="welcome_prompt"])[mesid] {
     --xy-message-avatar-art-inset: 5px;
   }
 }
 
 /* 消息横幅与正文保持独立，聊天工作区本身不额外添加底板。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes)[is_user="true"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid],
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes)[is_user="false"]:not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes)[is_user="true"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid],
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes)[is_user="false"]:not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
   border-color: transparent !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes):not([is_system="true"])[mesid] :is(.mes_text, .mes_reasoning) {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes)[mesid] :is(.mes_text, .mes_reasoning) {
   color: var(--xy-card-text) !important;
   background: transparent !important;
   text-shadow: 0 1px 1px rgba(7, 16, 19, .68) !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes):not([is_system="true"])[mesid] .mes_reasoning {
+/* 正文使用柔和的月瀑白；Markdown 段落按小说阅读习惯保留两字首行缩进。 */
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
+  color: var(--xy-body-text) !important;
+  font-size: 1.06em;
+  line-height: 1.8;
+}
+
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text > p {
+  margin: 0 0 .9em;
+  text-indent: 2em;
+}
+
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text > p:last-child {
+  margin-bottom: 0;
+}
+
+/* 单独一行的时间代码标记呈现为居中的剧情铭牌，不影响正文中的行内代码。 */
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text > p:has(> time:only-child > code:only-child) {
+  display: flex;
+  justify-content: center;
+  margin: .15em 0 1.35em;
+  text-align: center;
+  text-indent: 0;
+}
+
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text > p:has(> time:only-child > code:only-child) > time {
+  display: contents;
+}
+
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text > p:has(> time:only-child > code:only-child) > time > code {
+  box-sizing: border-box;
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  max-inline-size: 100%;
+  padding: .52em 1.35em .56em;
+  overflow-wrap: anywhere;
+  color: var(--xy-body-text) !important;
+  font-family: inherit;
+  font-size: 1.08em;
+  font-weight: 600;
+  line-height: 1.5;
+  text-shadow: 0 1px 1px rgba(20, 12, 17, .72) !important;
+  border: 1px solid rgba(170, 197, 207, .22) !important;
+  border-radius: 12px;
+  background: linear-gradient(128deg, rgba(14, 30, 43, .96) 0%, rgba(31, 55, 72, .94) 52%, rgba(17, 38, 56, .97) 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(214, 233, 235, .12), inset 0 0 0 1px rgba(8, 20, 30, .24), 0 3px 10px rgba(18, 49, 61, .18) !important;
+}
+
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:not(.smallSysMes)[mesid] .mes_reasoning {
   border-color: rgba(71, 94, 101, .18) !important;
 }
 
@@ -9793,7 +9976,7 @@ body.bubblechat:not(.xy-focus-mode) #send_but::before {
 }
 
 /* 非世界书功能页使用一体式双栏工作台：原生操作区仍留在左栏，右栏承接墨染说明图。 */
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim::before {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim::before {
   position: absolute;
   z-index: 0;
   top: var(--xy-function-panel-vertical-inset);
@@ -9810,11 +9993,12 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim::before {
   pointer-events: none;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) :is(
+body:is(.xy-focus-mode, .xy-focus-revealing) :is(
   #left-nav-panel,
   #rm_api_block,
   #AdvancedFormatting,
   #Backgrounds,
+  #WorldInfo,
   #rm_extensions_block,
   #user-settings-block,
   #PersonaManagement,
@@ -9829,7 +10013,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) :is(
 }
 
 /* 分隔线属于同一工作台内部，而不是两张相互独立的卡片边框。 */
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim::after {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim::after {
   right: 5dvw;
   width: 45dvw;
   box-sizing: border-box;
@@ -9851,7 +10035,7 @@ body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim::after {
   mask-composite: intersect;
 }
 
-body.xy-focus-mode:not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card {
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-scrim .xy-focus-paper-card {
   filter: drop-shadow(0 -5px 8px rgba(14, 30, 40, .24))
     drop-shadow(0 2px 1px rgba(221, 231, 230, .24));
 }
@@ -9889,11 +10073,11 @@ body.bubblechat:not(.xy-focus-mode) #chat:has(> .welcomePanel) > :is(.welcomePan
 }
 
 /* AI 响应配置：外层只承载顶部工具，正文滚动仅由原生 scrollableInner 负责。 */
-body.xy-focus-mode #left-nav-panel {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel {
   overflow: hidden !important;
 }
 
-body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > #lm_button_panel_pin_div {
   position: absolute;
   z-index: 3;
   top: 10px;
@@ -9906,7 +10090,7 @@ body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div {
   padding: 0;
 }
 
-body.xy-focus-mode #left-nav-panel > .topRightInset {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > .topRightInset {
   z-index: 3;
   top: 11px;
   right: 14px;
@@ -9917,7 +10101,7 @@ body.xy-focus-mode #left-nav-panel > .topRightInset {
   margin: 0;
 }
 
-body.xy-focus-mode #left-nav-panel > .scrollableInner {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > .scrollableInner {
   box-sizing: border-box;
   height: 100% !important;
   padding: 48px 12px 14px !important;
@@ -9927,7 +10111,7 @@ body.xy-focus-mode #left-nav-panel > .scrollableInner {
   scrollbar-width: none !important;
 }
 
-body.xy-focus-mode #left-nav-panel > .scrollableInner::-webkit-scrollbar {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > .scrollableInner::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -9935,7 +10119,7 @@ body.xy-focus-mode #left-nav-panel > .scrollableInner::-webkit-scrollbar {
 }
 
 /* 角色管理：锁定、目录与快捷角色共用紧凑顶栏，列表从其下方开始。 */
-body.xy-focus-mode #right-nav-panel[data-xy-panel-state="open"] {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel[data-xy-panel-state="open"] {
   display: grid !important;
   grid-template-rows: 42px auto minmax(0, 1fr);
   box-sizing: border-box;
@@ -9943,11 +10127,11 @@ body.xy-focus-mode #right-nav-panel[data-xy-panel-state="open"] {
   overflow: hidden !important;
 }
 
-body.xy-focus-mode #right-nav-panel > #right-nav-panelheader {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel > #right-nav-panelheader {
   display: none !important;
 }
 
-body.xy-focus-mode #right-nav-panel > #CharListButtonAndHotSwaps {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel > #CharListButtonAndHotSwaps {
   display: grid !important;
   grid-row: 1;
   grid-template-columns: auto minmax(0, 1fr);
@@ -9961,7 +10145,7 @@ body.xy-focus-mode #right-nav-panel > #CharListButtonAndHotSwaps {
   box-sizing: border-box;
 }
 
-body.xy-focus-mode #right-nav-panel > #CharListButtonAndHotSwaps > .flexFlowColumn {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel > #CharListButtonAndHotSwaps > .flexFlowColumn {
   display: flex !important;
   flex: 0 0 auto;
   flex-direction: row !important;
@@ -9969,7 +10153,7 @@ body.xy-focus-mode #right-nav-panel > #CharListButtonAndHotSwaps > .flexFlowColu
   gap: 7px !important;
 }
 
-body.xy-focus-mode #right-nav-panel #rm_button_panel_pin_div {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel #rm_button_panel_pin_div {
   display: grid !important;
   place-items: center;
   width: 30px;
@@ -9977,12 +10161,12 @@ body.xy-focus-mode #right-nav-panel #rm_button_panel_pin_div {
   margin: 0 !important;
 }
 
-body.xy-focus-mode #right-nav-panel #rm_button_panel_pin {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel #rm_button_panel_pin {
   display: none !important;
 }
 
-body.xy-focus-mode #right-nav-panel #rm_button_panel_pin_div > label,
-body.xy-focus-mode #right-nav-panel #rm_button_characters {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel #rm_button_panel_pin_div > label,
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel #rm_button_characters {
   display: grid !important;
   place-items: center;
   width: 30px;
@@ -9990,7 +10174,7 @@ body.xy-focus-mode #right-nav-panel #rm_button_characters {
   margin: 0 !important;
 }
 
-body.xy-focus-mode #right-nav-panel #HotSwapWrapper {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel #HotSwapWrapper {
   display: flex !important;
   min-width: 0;
   height: 30px;
@@ -9998,7 +10182,7 @@ body.xy-focus-mode #right-nav-panel #HotSwapWrapper {
   overflow: hidden;
 }
 
-body.xy-focus-mode #right-nav-panel #HotSwapWrapper > .hotswap {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel #HotSwapWrapper > .hotswap {
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -10012,12 +10196,12 @@ body.xy-focus-mode #right-nav-panel #HotSwapWrapper > .hotswap {
   white-space: nowrap;
 }
 
-body.xy-focus-mode #right-nav-panel > #rm_PinAndTabs {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel > #rm_PinAndTabs {
   grid-row: 2;
   min-width: 0;
 }
 
-body.xy-focus-mode #right-nav-panel > .scrollableInner {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel > .scrollableInner {
   grid-row: 3;
   min-width: 0;
   min-height: 0;
@@ -10029,7 +10213,7 @@ body.xy-focus-mode #right-nav-panel > .scrollableInner {
   scrollbar-width: none !important;
 }
 
-body.xy-focus-mode #right-nav-panel > .scrollableInner::-webkit-scrollbar {
+body:is(.xy-focus-mode, .xy-focus-revealing) #right-nav-panel > .scrollableInner::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -10127,20 +10311,20 @@ body.bubblechat:not(.xy-focus-mode) #chat:has(> .welcomePanel) > .mes.mes[type="
 }
 
 /* 正文随实际行数收束；短消息不再被空白区域强行拉高。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
   min-height: 0 !important;
   padding: 14px 22px 18px !important;
 }
 
 /* 楼层在横幅外独占一行；复用欢迎页两引子的深青墨纹材质。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
   --xy-message-floor-row-height: 48px;
   --xy-message-floor-row-gap: 12px;
   margin-top: calc(var(--xy-message-floor-row-height) + var(--xy-message-floor-row-gap)) !important;
   margin-bottom: 12px !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
   z-index: 9;
   top: calc(-1 * (var(--xy-message-floor-row-height) + var(--xy-message-floor-row-gap))) !important;
   right: auto;
@@ -10154,8 +10338,9 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   height: var(--xy-message-floor-row-height);
   padding: 0 24px;
   color: rgba(232, 235, 225, .96);
-  border: 1px solid rgba(220, 235, 234, .18);
-  border-radius: 5px;
+  border: 1px solid rgba(228, 236, 229, .42);
+  border-bottom-color: rgba(9, 24, 31, .78);
+  border-radius: 7px;
   background-color: #172d38;
   background-image:
     linear-gradient(132deg, rgba(15, 34, 45, .52) 0%, rgba(50, 72, 82, .48) 54%, rgba(19, 42, 53, .52) 100%),
@@ -10164,22 +10349,28 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   background-repeat: no-repeat, repeat;
   background-size: auto, 560px auto;
   background-blend-mode: normal, normal;
-  box-shadow: inset 0 1px 0 rgba(235, 244, 243, .08), 0 4px 10px rgba(2, 11, 14, .22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .48),
+    inset 0 -1px 0 rgba(3, 13, 17, .60),
+    inset 0 -16px 20px rgba(5, 18, 23, .16),
+    0 2px 0 rgba(6, 17, 22, .48),
+    0 9px 14px rgba(3, 12, 16, .24) !important;
   font-family: "温如春熙欢迎", "Microsoft YaHei UI", sans-serif;
   font-size: 22px;
   font-weight: 400;
   letter-spacing: .2em;
   line-height: 1;
   text-shadow: 0 1px 0 rgba(2, 10, 13, .72);
-  transform: translateX(-50%);
+  transform: translateX(-50%) perspective(1200px) rotateX(1deg) translateY(-1px);
+  transform-origin: 50% 0;
 }
 
-body.no-mesIDDisplay.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+body.no-mesIDDisplay.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
   margin-top: 0 !important;
 }
 
 /* 元信息卡下方以同色系的收束断墨分界，不使用通栏直线。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::after {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::after {
   position: absolute;
   z-index: 8;
   top: calc(var(--xy-message-masthead-height) + 48px);
@@ -10193,21 +10384,21 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   pointer-events: none;
 }
 
-body.no-mesIDDisplay.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::after {
+body.no-mesIDDisplay.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::after {
   display: none;
 }
 
 /* 横幅只展示原图，取消顶部与署名栏上的暗色蒙版。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   background: url("./assets/chat-message-banner-mountains.jpg") center 36% / cover no-repeat !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   background: url("./assets/chat-message-banner-assistant.jpg") center 53% / cover no-repeat !important;
 }
 
 /* 用户层与 AI 层的消息横幅、头像共用静态立体处理：只建立景深，不引入交互动效。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):is([is_user="true"], [is_user="false"]):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):is([is_user="true"], [is_user="false"]):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   position: relative;
   z-index: 1;
   box-sizing: border-box;
@@ -10223,35 +10414,35 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   transform-origin: 50% 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   transform: perspective(1200px) rotateX(1.15deg) rotateY(-.38deg) translateY(-1px);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   transform: perspective(1200px) rotateX(1.15deg) rotateY(.38deg) translateY(-1px);
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
   border-top-color: transparent !important;
   background: transparent !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name :is(.name_text, .mes_buttons .mes_button) {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name :is(.name_text, .mes_buttons .mes_button) {
   text-shadow: 0 1px 2px rgba(2, 10, 13, .88);
 }
 
 /* 时间、Token 与耗时卡片以横幅边缘为基准，并保留纸纹与色洗层。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   right: auto !important;
   left: 0 !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta {
   right: 0 !important;
   left: auto !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .xy-message-meta > :is(.timestamp, .tokenCounterDisplay, .mes_timer) {
   color: rgba(10, 28, 33, .96) !important;
   border-color: rgba(222, 229, 222, .48) !important;
   background:
@@ -10261,7 +10452,7 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
 }
 
 /* 横幅署名固定为纯黑墨字，不叠加描边、阴影或滤镜。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::after {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::after {
   color: #000 !important;
   -webkit-text-stroke: 0 !important;
   text-shadow: none !important;
@@ -10269,31 +10460,31 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
 }
 
 /* 用户与 AI 名称各自成为贴边的墨纹名牌。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name {
   align-items: center;
   z-index: 8;
   padding: 0 !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
   flex: 0 1 auto !important;
   min-width: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
   order: 0;
   margin-right: 0;
   margin-left: 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .flex-container:first-child {
   order: 1;
   margin-right: 0;
   margin-left: 0;
   justify-content: flex-end;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
   display: inline-flex !important;
   align-items: center;
   min-height: 32px;
@@ -10318,14 +10509,14 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   text-shadow: none;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
   color: #fff !important;
   border-color: rgba(220, 235, 234, .18) !important;
   border-left: 0 !important;
   border-radius: 0 4px 4px 0;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
   color: #c8d9d4 !important;
   border-color: rgba(220, 235, 234, .18) !important;
   border-right: 0 !important;
@@ -10333,7 +10524,7 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
 }
 
 /* 三个消息操作按钮与两侧身份牌归为同一信息组。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
   position: static;
   top: auto;
   display: inline-flex !important;
@@ -10343,7 +10534,7 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   transform: none;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
   order: 1;
   right: auto;
   left: auto;
@@ -10351,7 +10542,7 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   margin-left: 8px !important;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
   order: 0;
   right: auto;
   left: auto;
@@ -10360,7 +10551,7 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
 }
 
 /* 三个消息操作按钮只复用输入区的立体工具按钮表面。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button {
   color: rgba(220, 232, 225, .94) !important;
   border: 1px solid rgba(184, 207, 198, .34) !important;
   border-radius: 4px !important;
@@ -10372,27 +10563,27 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   background-repeat: no-repeat, repeat !important;
   background-size: auto, 560px auto !important;
   background-blend-mode: normal, normal !important;
-  box-shadow: inset 0 1px 0 rgba(247, 251, 244, .16), inset 0 -1px 0 rgba(2, 14, 17, .5), 0 2px 0 rgba(2, 12, 15, .72), 0 4px 8px rgba(2, 12, 15, .24) !important;
+  box-shadow: inset 0 1px 0 rgba(247, 251, 244, .16), inset 0 -1px 0 rgba(2, 14, 17, .5), 0 1px 3px rgba(2, 12, 15, .20) !important;
   text-shadow: none;
   transform: translateY(0);
   transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button:hover,
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button:focus-visible {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button:hover,
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button:focus-visible {
   color: #f0e1ad !important;
   border-color: rgba(221, 190, 112, .62) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 250, 231, .22), inset 0 -1px 0 rgba(2, 14, 17, .48), 0 3px 0 rgba(2, 12, 15, .68), 0 6px 11px rgba(2, 12, 15, .28) !important;
-  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 250, 231, .22), inset 0 -1px 0 rgba(2, 14, 17, .48), 0 1px 4px rgba(2, 12, 15, .22) !important;
+  transform: none;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button:active {
-  box-shadow: inset 0 2px 4px rgba(2, 13, 16, .58), 0 1px 0 rgba(2, 12, 15, .6) !important;
-  transform: translateY(1px);
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons > .mes_button:active {
+  box-shadow: inset 0 2px 4px rgba(2, 13, 16, .58), 0 1px 2px rgba(2, 12, 15, .16) !important;
+  transform: none;
 }
 
 /* 三点展开的子功能按钮保留原生图标色，复用主操作按钮的立体表面。 */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > * {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > * {
   display: grid;
   place-items: center;
   box-sizing: border-box;
@@ -10411,59 +10602,59 @@ body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.
   background-repeat: no-repeat, repeat !important;
   background-size: auto, 560px auto !important;
   background-blend-mode: normal, normal !important;
-  box-shadow: inset 0 1px 0 rgba(247, 251, 244, .16), inset 0 -1px 0 rgba(2, 14, 17, .5), 0 2px 0 rgba(2, 12, 15, .72), 0 4px 8px rgba(2, 12, 15, .24) !important;
+  box-shadow: inset 0 1px 0 rgba(247, 251, 244, .16), inset 0 -1px 0 rgba(2, 14, 17, .5), 0 1px 3px rgba(2, 12, 15, .20) !important;
   opacity: 1 !important;
   text-shadow: none;
   transform: translateY(0);
   transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > :hover,
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > :focus-visible {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > :hover,
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > :focus-visible {
   color: var(--xy-card-text-soft) !important;
   border-color: rgba(221, 190, 112, .62) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 250, 231, .22), inset 0 -1px 0 rgba(2, 14, 17, .48), 0 3px 0 rgba(2, 12, 15, .68), 0 6px 11px rgba(2, 12, 15, .28) !important;
-  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 250, 231, .22), inset 0 -1px 0 rgba(2, 14, 17, .48), 0 1px 4px rgba(2, 12, 15, .22) !important;
+  transform: none;
 }
 
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > :active {
-  box-shadow: inset 0 2px 4px rgba(2, 13, 16, .58), 0 1px 0 rgba(2, 12, 15, .6) !important;
-  transform: translateY(1px);
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .extraMesButtons > :active {
+  box-shadow: inset 0 2px 4px rgba(2, 13, 16, .58), 0 1px 2px rgba(2, 12, 15, .16) !important;
+  transform: none;
 }
 
 @media (max-width: 700px) {
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] {
     --xy-message-floor-row-height: 42px;
     --xy-message-floor-row-gap: 10px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid]::before {
     min-width: min(164px, calc(100% - 20px));
     padding: 0 18px;
     font-size: 18px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::after {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::after {
     top: -6px;
     right: 24px;
     left: 24px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .mes_text {
     padding: 12px 15px 16px !important;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name .name_text {
     min-height: 30px;
     padding: 4px 9px;
     font-size: 14px;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="true"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
     margin-left: 6px !important;
   }
 
-  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
+  body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes)[is_user="false"]:not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] .ch_name > .mes_buttons {
     margin-right: 6px !important;
   }
 
@@ -10913,7 +11104,7 @@ body:not(.charListGrid) #right-nav-panel #rm_print_characters_block :is(.ch_desc
 }
 
 /* 专注态覆盖旧 flex 规则，避免 AI 顶栏被遗留内边距撑开。 */
-body.xy-focus-mode #left-nav-panel {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: 38px minmax(0, 1fr);
@@ -10922,7 +11113,7 @@ body.xy-focus-mode #left-nav-panel {
   padding: 0 12px 12px !important;
 }
 
-body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > #lm_button_panel_pin_div {
   position: static !important;
   display: grid !important;
   grid-column: 1;
@@ -10936,11 +11127,11 @@ body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div {
   align-self: center;
 }
 
-body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div > #lm_button_panel_pin {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > #lm_button_panel_pin_div > #lm_button_panel_pin {
   display: none !important;
 }
 
-body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div > label {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > #lm_button_panel_pin_div > label {
   display: grid !important;
   place-items: center;
   width: 30px;
@@ -10948,7 +11139,7 @@ body.xy-focus-mode #left-nav-panel > #lm_button_panel_pin_div > label {
   margin: 0;
 }
 
-body.xy-focus-mode #left-nav-panel > .topRightInset {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > .topRightInset {
   position: static !important;
   display: grid !important;
   grid-column: 2;
@@ -10962,7 +11153,7 @@ body.xy-focus-mode #left-nav-panel > .topRightInset {
   align-self: center;
 }
 
-body.xy-focus-mode #left-nav-panel > .scrollableInner {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > .scrollableInner {
   box-sizing: border-box;
   grid-column: 1 / -1;
   grid-row: 2;
@@ -10976,14 +11167,14 @@ body.xy-focus-mode #left-nav-panel > .scrollableInner {
   scrollbar-width: none !important;
 }
 
-body.xy-focus-mode #left-nav-panel > .scrollableInner::-webkit-scrollbar {
+body:is(.xy-focus-mode, .xy-focus-revealing) #left-nav-panel > .scrollableInner::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
 
 /* 快捷入口打开时，左栏直接占满工作区，不能保留原生内容高度的小窗。 */
-body.xy-focus-mode:not(.xy-worldbook-mode) :is(
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) :is(
   #left-nav-panel,
   #rm_api_block,
   #AdvancedFormatting,
@@ -11003,6 +11194,107 @@ body.xy-focus-mode:not(.xy-worldbook-mode) :is(
   height: auto !important;
   max-height: none !important;
   transform: none !important;
+}
+
+/* 面板与水墨题签属于同一工作区，以两个同步合成子层从固定左边界滑入。 */
+body:is(.xy-focus-mode, .xy-focus-revealing) #xy-focus-panel-slot > :is(
+  #left-nav-panel,
+  #rm_api_block,
+  #AdvancedFormatting,
+  #Backgrounds,
+  #rm_extensions_block,
+  #user-settings-block,
+  #PersonaManagement,
+  #right-nav-panel
+)[data-xy-panel-state="open"] {
+  position: absolute !important;
+  top: var(--xy-function-panel-vertical-inset) !important;
+  right: 0 !important;
+  bottom: var(--xy-function-panel-vertical-inset) !important;
+  left: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  transform: none !important;
+}
+
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-workspace-stage > #xy-focus-scrim::before {
+  left: 0;
+}
+
+body:is(.xy-focus-mode, .xy-focus-revealing):not(.xy-worldbook-mode) #xy-focus-workspace-stage > #xy-focus-scrim .xy-focus-paper-card {
+  left: calc(72.5dvw - var(--xy-focus-workspace-left) - (var(--xy-focus-paper-seal-size) / 2));
+}
+
+/* 世界书保留发布版的左右边界；共享动画仅移动完整工作区。 */
+body.xy-worldbook-mode #xy-focus-workspace {
+  left: var(--xy-focus-workspace-left);
+}
+
+body.xy-worldbook-mode #xy-focus-panel-slot {
+  inset: 0;
+  width: auto;
+  max-width: none;
+}
+
+/* The original wide WorldInfo rule sets an explicit width. Override it at the final
+   workspace layer so its visible bounds match the complete panel-plus-ink workspace. */
+body.xy-worldbook-mode #xy-focus-panel-slot > #WorldInfo[data-xy-panel-state="open"] {
+  left: 0 !important;
+  right: 5dvw !important;
+  width: calc(100% - 5dvw) !important;
+  max-width: none !important;
+}
+
+/* The base page stays beneath the workspace and follows its 500ms motion. */
+body.xy-focus-revealing #sheld {
+  transition: filter 500ms cubic-bezier(.45, 0, .55, 1) !important;
+}
+
+body.xy-focus-revealing:not(.xy-focus-closing) #sheld {
+  filter: blur(clamp(2px, .35dvw, 6px)) saturate(.84) brightness(.78) !important;
+  will-change: filter;
+}
+
+body.xy-focus-closing #sheld {
+  filter: none !important;
+  will-change: filter;
+}
+
+/* The WorldInfo workspace keeps its existing two-column layout. Neither column may
+   force the outer function workspace wider than the screen. */
+body.xy-worldbook-mode #WorldInfo[data-xy-panel-state="open"] .xy-wi-workspace {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, .9fr);
+  gap: clamp(8px, 1dvw, 16px);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  overflow: visible;
+}
+
+body.xy-worldbook-mode #WorldInfo[data-xy-panel-state="open"] :is(
+  .xy-wi-workspace__left,
+  #world_popup_entries_list,
+  #WIEntryHeaderTitlesPC,
+  .world_entry .inline-drawer-header,
+  #xy-worldbook-reader
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.xy-worldbook-mode #WorldInfo[data-xy-panel-state="open"] #xy-worldbook-reader {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Preserve the side-by-side reader at every width. Dense native list controls scroll
+   inside the left column instead of pushing the preview out of the visible workspace. */
+body.xy-worldbook-mode #WorldInfo[data-xy-panel-state="open"] .xy-wi-workspace__left {
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 /* 首页快捷入口等待工作区几何稳定后再显示左栏，彻底屏蔽原生小窗帧。 */
@@ -11168,11 +11460,33 @@ body.bubblechat:not(.xy-focus-mode) .xy-home-hero-actions .welcomeShortcuts butt
 }
 
 /* Keep the message-card depth above late global shadow resets. */
-body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):is([is_user="true"], [is_user="false"]):not(.smallSysMes):not([is_system="true"]):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
+body.bubblechat:not(.xy-focus-mode) #chat:not(:has(> .welcomePanel)) > .mes:is(.mes):is([is_user="true"], [is_user="false"]):not(.smallSysMes):not([type="assistant_message"]):not([type="welcome_prompt"])[mesid] > .mes_block::before {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .58),
     inset 0 -1px 0 rgba(3, 13, 17, .62),
     inset 0 -28px 32px rgba(5, 18, 23, .15),
     0 3px 0 rgba(6, 17, 22, .56),
     0 13px 20px rgba(3, 12, 16, .3) !important;
+}
+
+/* 正则的批量选择框只在开启批量编辑时显示，避免通用复选框样式破坏原生状态。 */
+.regex_settings .regex_bulk_checkbox {
+  display: none !important;
+}
+
+.regex_settings:has(#regex_bulk_edit:checked) .regex_bulk_checkbox {
+  display: inline-grid !important;
+}
+
+/* 原版以图标承载状态；隐藏用于驱动图标的原生输入框。 */
+.regex_settings :is(input.disable_regex, input.enable_scoped) {
+  display: none !important;
+}
+
+.regex_settings :is(#regex_scoped_toggle, #regex_preset_toggle) {
+  display: none !important;
+}
+
+#regex_container .regex-script-label :is(input.disable_regex, input[name="regex_expand"]) {
+  display: none !important;
 }

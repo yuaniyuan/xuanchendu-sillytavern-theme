@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.2';
+    const EXTENSION_VERSION = '1.0.4';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
@@ -50,11 +50,12 @@
         boat: new URL('assets/nav-boat-banner-alpha.webm', import.meta.url).href,
         navInkLeft: new URL('assets/nav-ink-left.webp', import.meta.url).href,
         navInkRight: new URL('assets/nav-ink-right.webp', import.meta.url).href,
-        homeLogo: new URL('assets/xuanchendu-logo-ink-cropped.png?v=1.0.0', import.meta.url).href,
+        homeLogo: new URL('assets/xuanchendu-logo-ink-cropped.png?v=1.0.4', import.meta.url).href,
         searchableSelects: new URL('assets/searchable-selects.js?v=1.2.0', import.meta.url).href,
         gsap: new URL('assets/vendor/gsap-3.13.0.min.js?v=3.13.0-composer', import.meta.url).href,
         pixelSnow: new URL('assets/pixel-snow.js?v=1.2.0', import.meta.url).href,
         sidebarGrainient: new URL('assets/grainient-sidebar.js?v=1.6.0', import.meta.url).href,
+        genderDialogue: new URL('assets/gender-dialogue.js?v=1.0.4', import.meta.url).href,
     };
     const PANEL_SELECTOR = [
         '#left-nav-panel',
@@ -89,6 +90,8 @@
     let focusSyncFrame = null;
     let focusSyncNeedsPresentation = false;
     let themePanels = null;
+    let focusWorkspaceAnimation = null;
+    const focusPanelHomes = new WeakMap();
     let worldbookEnhanceFrame = null;
     let worldbookResizeFrame = null;
     let worldbookListObserver = null;
@@ -128,9 +131,53 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     let homePixelSnowRenderer = null;
     const SIDEBAR_MODE_KEY = 'xy-sidebar-mode-v2';
     let sidebarTween = null;
-    const MESSAGE_META_MESSAGE_SELECTOR = '.mes[mesid]:not(.smallSysMes):not([is_system="true"]):not([type="welcome_prompt"])';
+    let genderDialoguePromise = null;
+    let genderDialoguePromptEventsBound = false;
+    const MESSAGE_META_MESSAGE_SELECTOR = '.mes[mesid]:not(.smallSysMes):not([type="welcome_prompt"])';
     const MESSAGE_META_RELEVANT_NODE_SELECTOR = '.timestamp, .tokenCounterDisplay, .mes_timer, .mes_block, .mes_header, .ch_name';
     const MESSAGE_META_BATCH_SIZE = 6;
+
+    function registerGenderDialoguePrompt(core, dialogueModule) {
+        core.setExtensionPrompt(
+            dialogueModule.DIALOGUE_GENDER_PROMPT_KEY,
+            dialogueModule.DIALOGUE_GENDER_PROMPT,
+            core.extension_prompt_types.IN_CHAT,
+            0,
+            false,
+            core.extension_prompt_roles.SYSTEM,
+        );
+        document.documentElement.dataset.xyGenderDialoguePrompt = 'registered';
+    }
+
+    function ensureGenderDialogue() {
+        if (!genderDialoguePromise) {
+            genderDialoguePromise = import(ASSETS.genderDialogue).then(async (dialogueModule) => {
+                try {
+                    const core = await import(new URL('../../../../script.js', import.meta.url).href);
+                    const restorePrompt = () => registerGenderDialoguePrompt(core, dialogueModule);
+                    restorePrompt();
+                    if (!genderDialoguePromptEventsBound) {
+                        genderDialoguePromptEventsBound = true;
+                        core.eventSource.on(core.event_types.CHAT_CHANGED, restorePrompt);
+                        core.eventSource.on(core.event_types.GENERATION_STARTED, restorePrompt);
+                    }
+                } catch (error) {
+                    document.documentElement.dataset.xyGenderDialoguePrompt = 'failed';
+                    console.warn('[玄尘渡] 性别台词提示词注册失败。', error);
+                }
+                return dialogueModule;
+            }).catch((error) => {
+                genderDialoguePromise = null;
+                console.warn('[玄尘渡] 性别台词渲染模块加载失败。', error);
+                return null;
+            });
+        }
+
+        return genderDialoguePromise.then((dialogueModule) => {
+            dialogueModule?.bindGenderDialogueRenderer();
+            return dialogueModule;
+        });
+    }
 
     function normalizeRecentSearch(value) {
         return String(value ?? '')
@@ -673,7 +720,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         };
         const onPointerOut = (event) => {
             const card = event.target instanceof Element ? event.target.closest('.recentChat') : null;
-            if (card === controller.activeCard && !card.contains(event.relatedTarget)) {
+            if (card && card === controller.activeCard && !card.contains(event.relatedTarget)) {
                 scheduleHide();
             }
         };
@@ -2514,23 +2561,17 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         }
     }
 
-    function clearSidebarAnimationState(holder, gsap) {
+    function clearSidebarAnimationState(holder) {
         if (!(holder instanceof HTMLElement)) {
             return;
         }
-        if (gsap) {
-            gsap.set(holder, { clearProps: 'transform' });
-        } else {
-            holder.style.removeProperty('transform');
-        }
-        holder.style.removeProperty('will-change');
         delete holder.dataset.xySidebarAnimating;
     }
 
-    function cancelSidebarAnimation(holder, gsap) {
-        sidebarTween?.kill();
+    function cancelSidebarAnimation(holder) {
+        sidebarTween?.forEach((animation) => animation.cancel());
         sidebarTween = null;
-        clearSidebarAnimationState(holder, gsap);
+        clearSidebarAnimationState(holder);
     }
 
     function getSidebarTravel(holder, root = document.documentElement) {
@@ -2562,74 +2603,74 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             return;
         }
 
-        // Lock before loading GSAP as well: a rapid second click must not queue a rival tween.
         holder.dataset.xySidebarAnimating = 'true';
-        let gsap;
-        try {
-            gsap = await loadComposerGsap();
-        } catch {
+        const control = holder.querySelector('#xy-sidebar-toggle');
+        const arrow = control?.querySelector('.xy-sidebar-toggle__icon');
+        if (typeof holder.animate !== 'function') {
             applySidebarMode(nextMode, persist);
             clearSidebarAnimationState(holder);
             return;
         }
 
-        cancelSidebarAnimation(holder, gsap);
+        cancelSidebarAnimation(holder);
         holder.dataset.xySidebarAnimating = 'true';
-        const complete = () => {
-            sidebarTween = null;
-            clearSidebarAnimationState(holder, gsap);
+        const options = {
+            duration: 500,
+            easing: 'cubic-bezier(.45, 0, .55, 1)',
+            fill: 'both',
         };
+        const animations = [];
 
         if (nextMode === 'expanded') {
-            const control = holder.querySelector('#xy-sidebar-toggle');
-            const arrow = control?.querySelector('.xy-sidebar-toggle__icon');
-            gsap.set(arrow, {
-                rotation: 0,
-                transformOrigin: '50% 50%',
-                force3D: true,
-            });
             applySidebarMode('expanded', persist);
             const travel = getSidebarTravel(holder);
-            gsap.set(holder, {
-                x: -travel,
-                willChange: 'transform',
-                force3D: true,
-            });
-            return new Promise((resolve) => {
-                sidebarTween = gsap.timeline({
-                    defaults: { duration: .5, ease: 'power2.inOut', overwrite: 'auto' },
-                    onComplete: () => {
-                        gsap.set(arrow, { clearProps: 'transform' });
-                        complete();
-                        resolve();
-                    },
-                })
-                    .to(holder, { x: 0 }, 0)
-                    .to(arrow, { rotation: -180 }, 0);
-            });
-        }
-
-        const travel = getSidebarTravel(holder);
-        const control = holder.querySelector('#xy-sidebar-toggle');
-        const arrow = control?.querySelector('.xy-sidebar-toggle__icon');
-        if (persist) {
-            try {
-                window.localStorage.setItem(SIDEBAR_MODE_KEY, 'hidden');
-            } catch {
-                // Private browsing can deny local storage without affecting the layout.
+            animations.push(holder.animate([
+                { transform: `translateX(${-travel}px)` },
+                { transform: 'translateX(0)' },
+            ], options));
+            if (arrow instanceof HTMLElement) {
+                animations.push(arrow.animate([
+                    { transform: 'rotate(0deg)' },
+                    { transform: 'rotate(-180deg)' },
+                ], options));
+            }
+        } else {
+            if (persist) {
+                try {
+                    window.localStorage.setItem(SIDEBAR_MODE_KEY, 'hidden');
+                } catch {
+                    // Private browsing can deny local storage without affecting the layout.
+                }
+            }
+            const travel = getSidebarTravel(holder);
+            animations.push(holder.animate([
+                { transform: 'translateX(0)' },
+                { transform: `translateX(${-travel}px)` },
+            ], options));
+            if (arrow instanceof HTMLElement) {
+                animations.push(arrow.animate([
+                    { transform: 'rotate(-180deg)' },
+                    { transform: 'rotate(0deg)' },
+                ], options));
             }
         }
-        gsap.set(holder, { willChange: 'transform', force3D: true });
-        sidebarTween = gsap.timeline({
-            defaults: { duration: .5, ease: 'power2.inOut', overwrite: 'auto' },
-            onComplete: () => {
-                applySidebarMode('hidden', false);
-                gsap.set(arrow, { clearProps: 'transform' });
-                complete();
-            },
-        })
-            .to(holder, { x: -travel }, 0)
-            .to(arrow, { rotation: 0 }, 0);
+
+        sidebarTween = animations;
+        try {
+            await Promise.all(animations.map((animation) => animation.finished));
+        } catch {
+            if (sidebarTween === animations) {
+                cancelSidebarAnimation(holder);
+            }
+            return;
+        }
+        if (sidebarTween !== animations) {
+            return;
+        }
+        if (nextMode === 'hidden') {
+            applySidebarMode('hidden', false);
+        }
+        cancelSidebarAnimation(holder);
     }
 
     function ensureSidebar() {
@@ -2648,6 +2689,10 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             }
 
             drawer.dataset.xyPanelId = panel.id;
+            panel.dataset.xyPanelManaged = 'true';
+            if (drawer.id) {
+                panel.dataset.xyPanelDrawerId = drawer.id;
+            }
             trigger.setAttribute('aria-label', meta.title);
             trigger.querySelector('.xy-sidebar-label')?.remove();
         });
@@ -2671,16 +2716,14 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                 }
             event.preventDefault();
             event.stopImmediatePropagation();
-            if (holder.dataset.xySidebarAnimating === 'true') {
+            if (holder.dataset.xySidebarAnimating === 'true'
+                || document.getElementById('xy-focus-workspace')?.dataset.xyFocusWorkspaceAnimating === 'true'
+                || document.getElementById('xy-focus-workspace')?.dataset.xyFocusWorkspaceBusy === 'true') {
                 return;
             }
             const current = holder.dataset.xySidebarMode;
             if (current === 'expanded') {
-                // 「收回」结束整个功能工作区，不能留下失去入口的悬浮面板。
-                getThemePanels().forEach(closePanel);
-                pendingPanelId = null;
-                scheduleFocusSync();
-                requestAnimationFrame(() => void setSidebarMode('hidden'));
+                void closeFocusWorkspace(() => void setSidebarMode('hidden'));
                 return;
             }
             void setSidebarMode('expanded');
@@ -2720,8 +2763,14 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     }
 
     function panelIsOpen(panel) {
-        return panel?.dataset.xyPanelState === 'open'
-            || panel?.classList.contains('openDrawer');
+        if (!panel) {
+            return false;
+        }
+
+        // Theme-managed panels retain openDrawer to avoid a costly native subtree scan.
+        // After ownership transfers, the theme data state is the only open-state authority.
+        return panel.dataset.xyPanelState === 'open'
+            || (panel.dataset.xyPanelManaged !== 'true' && panel.classList.contains('openDrawer'));
     }
 
     function getPanelDrawer(panel) {
@@ -2738,16 +2787,171 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             || null;
     }
 
+    function ensureFocusWorkspace() {
+        let workspace = document.getElementById('xy-focus-workspace');
+        if (!(workspace instanceof HTMLElement)) {
+            workspace = document.createElement('div');
+            workspace.id = 'xy-focus-workspace';
+            workspace.setAttribute('aria-hidden', 'true');
+            document.body.append(workspace);
+        }
+
+        let stage = workspace.querySelector(':scope > #xy-focus-workspace-stage');
+        if (!(stage instanceof HTMLElement)) {
+            stage = document.createElement('div');
+            stage.id = 'xy-focus-workspace-stage';
+            const existingChildren = [...workspace.children];
+            workspace.append(stage);
+            stage.append(...existingChildren);
+        }
+        let panelSlot = stage.querySelector(':scope > #xy-focus-panel-slot');
+        if (!(panelSlot instanceof HTMLElement)) {
+            panelSlot = document.createElement('div');
+            panelSlot.id = 'xy-focus-panel-slot';
+            const existingPanels = [...stage.children]
+                .filter((element) => element.id !== 'xy-focus-scrim');
+            stage.append(panelSlot);
+            panelSlot.append(...existingPanels);
+        }
+        return workspace;
+    }
+
+    function getFocusWorkspaceStage(workspace = ensureFocusWorkspace()) {
+        return workspace.querySelector(':scope > #xy-focus-workspace-stage');
+    }
+
+    function getFocusPanelSlot(workspace = ensureFocusWorkspace()) {
+        return getFocusWorkspaceStage(workspace)?.querySelector(':scope > #xy-focus-panel-slot');
+    }
+
+    function mountPanelInFocusWorkspace(panel) {
+        if (!(panel instanceof HTMLElement)) {
+            return ensureFocusWorkspace();
+        }
+
+        const workspace = ensureFocusWorkspace();
+        const panelSlot = getFocusPanelSlot(workspace);
+        if (panel.parentElement === panelSlot) {
+            return workspace;
+        }
+
+        const drawer = getPanelDrawer(panel);
+        if (drawer?.id) {
+            drawer.dataset.xyPanelId = panel.id;
+            panel.dataset.xyPanelDrawerId = drawer.id;
+        }
+        focusPanelHomes.set(panel, {
+            parent: panel.parentNode,
+            nextSibling: panel.nextSibling,
+        });
+        panelSlot.append(panel);
+        return workspace;
+    }
+
+    function restorePanelHome(panel) {
+        const home = focusPanelHomes.get(panel);
+        if (!home?.parent?.isConnected || panel.parentNode === home.parent) {
+            focusPanelHomes.delete(panel);
+            return;
+        }
+
+        if (home.nextSibling?.parentNode === home.parent) {
+            home.parent.insertBefore(panel, home.nextSibling);
+        } else {
+            home.parent.append(panel);
+        }
+        focusPanelHomes.delete(panel);
+    }
+
+    function cancelFocusWorkspaceAnimation(workspace) {
+        focusWorkspaceAnimation?.forEach((animation) => animation.cancel());
+        focusWorkspaceAnimation = null;
+        if (workspace instanceof HTMLElement) {
+            delete workspace.dataset.xyFocusWorkspaceAnimating;
+        }
+    }
+
+    function revealBasePageForFocusClose() {
+        document.body.classList.add('xy-focus-revealing');
+        document.body.classList.remove('xy-focus-mode');
+    }
+
+    async function animateFocusWorkspace(direction, complete, startTogether) {
+        const workspace = ensureFocusWorkspace();
+        if (workspace.dataset.xyFocusWorkspaceAnimating === 'true') {
+            return false;
+        }
+
+        const finish = () => {
+            complete?.();
+            cancelFocusWorkspaceAnimation(workspace);
+        };
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            || typeof workspace.animate !== 'function') {
+            if (direction === 'close') {
+                revealBasePageForFocusClose();
+                document.body.classList.add('xy-focus-closing');
+            }
+            startTogether?.();
+            finish();
+            return true;
+        }
+
+        workspace.dataset.xyFocusWorkspaceAnimating = 'true';
+        const opening = direction === 'open';
+        const stage = getFocusWorkspaceStage(workspace);
+        const panelSlot = getFocusPanelSlot(workspace);
+        const hiddenTransform = 'translate3d(calc(-100dvw + var(--xy-focus-workspace-left)), 0, 0)';
+        const keyframes = [
+            { transform: opening ? hiddenTransform : 'translate3d(0, 0, 0)' },
+            { transform: opening ? 'translate3d(0, 0, 0)' : hiddenTransform },
+        ];
+        const options = {
+            duration: 500,
+            easing: 'cubic-bezier(.45, 0, .55, 1)',
+            fill: 'both',
+        };
+        const animations = [stage.querySelector(':scope > #xy-focus-scrim'), panelSlot]
+            .filter((element) => element instanceof HTMLElement)
+            .map((element) => element.animate(keyframes, options));
+        focusWorkspaceAnimation = animations;
+        try {
+            if (!opening) {
+                workspace.dataset.xyFocusWorkspaceState = 'closing';
+                revealBasePageForFocusClose();
+                document.body.classList.add('xy-focus-closing');
+                startTogether?.();
+            }
+            await Promise.all(animations.map((animation) => animation.finished));
+        } catch {
+            if (!opening) {
+                setClassState(document.body, 'xy-focus-revealing', false);
+                setClassState(document.body, 'xy-focus-closing', false);
+                syncFocusMode();
+            }
+            if (focusWorkspaceAnimation === animations) {
+                cancelFocusWorkspaceAnimation(workspace);
+            }
+            return false;
+        }
+        if (focusWorkspaceAnimation !== animations) {
+            return false;
+        }
+        finish();
+        return true;
+    }
+
     function detachAdvancedFormattingPanel() {
         const panel = document.querySelector('#AdvancedFormatting');
         if (!panel) {
             return;
         }
 
-        // Repair a page that was loaded while the discarded stage experiment was active.
-        // A correctly detached panel always lives directly under body.
+        // The inactive Advanced Formatting panel lives under body. Its active state is
+        // temporarily mounted in the shared focus workspace with every other panel.
         if (panel.dataset.xyPanelDetached === 'true') {
-            if (panel.parentElement !== document.body) {
+            if (panel.parentElement !== document.body
+                && panel.parentElement?.id !== 'xy-focus-workspace-stage') {
                 document.body.append(panel);
             }
             return;
@@ -2791,8 +2995,10 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             return;
         }
 
+        mountPanelInFocusWorkspace(panel);
         // Keep the large drawer subtree on its native closed class. SillyTavern's keyboard
         // observer scans every descendant when that class changes; this tiny data state does not.
+        panel.dataset.xyPanelManaged = 'true';
         if (panel.dataset.xyPanelState !== 'open') {
             panel.dataset.xyPanelState = 'open';
         }
@@ -2808,20 +3014,24 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
 
     function ensureFocusScrim() {
         document.getElementById('xy-focus-hint')?.remove();
+        const workspace = ensureFocusWorkspace();
+        const stage = getFocusWorkspaceStage(workspace);
         let scrim = document.getElementById('xy-focus-scrim');
         if (scrim instanceof HTMLElement) {
+            if (scrim.parentElement !== stage) {
+                stage.prepend(scrim);
+            }
             return scrim;
         }
 
         scrim = document.createElement('div');
         scrim.id = 'xy-focus-scrim';
         scrim.setAttribute('aria-hidden', 'true');
-        scrim.addEventListener('click', () => {
-            getThemePanels().forEach(closePanel);
-            pendingPanelId = null;
-            queueMicrotask(scheduleFocusSync);
+        scrim.addEventListener('click', (event) => {
+            event.stopPropagation();
+            void closeFocusWorkspace();
         });
-        document.body.append(scrim);
+        stage.prepend(scrim);
         return scrim;
     }
 
@@ -2865,7 +3075,8 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
 
         const scrim = ensureFocusScrim();
         const isWorldbook = panel.id === 'WorldInfo';
-        const wasFocused = document.body.classList.contains('xy-focus-mode');
+        const isRevealingBasePage = document.body.classList.contains('xy-focus-revealing');
+        const wasFocused = document.body.classList.contains('xy-focus-mode') || isRevealingBasePage;
         const isSameFocus = wasFocused && activeFocusPanelId === panel.id;
         const applySide = () => {
             setClassState(document.body, 'xy-focus-left', meta.side === 'left');
@@ -2883,7 +3094,11 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             applySide();
             return;
         }
-        setClassState(document.body, 'xy-focus-mode', true);
+        // Keep the chat or welcome page beneath the workspace for the entire session.
+        // The workspace scrim owns pointer events, so this does not make the base interactive.
+        if (!isRevealingBasePage) {
+            setClassState(document.body, 'xy-focus-mode', true);
+        }
         scrim.setAttribute('aria-hidden', 'false');
         applySide();
         activeFocusPanelId = panel.id;
@@ -2902,7 +3117,8 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     }
 
     function leaveFocusMode() {
-        if (!document.body.classList.contains('xy-focus-mode')) {
+        if (!document.body.classList.contains('xy-focus-mode')
+            && !document.body.classList.contains('xy-focus-revealing')) {
             return;
         }
 
@@ -2911,6 +3127,8 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         removeFocusPresentation(scrim);
         document.body.classList.remove(
             'xy-focus-mode',
+            'xy-focus-revealing',
+            'xy-focus-closing',
             'xy-focus-left',
             'xy-focus-right',
             'xy-worldbook-mode',
@@ -2920,7 +3138,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         }
         activeFocusPanelId = null;
 
-        // A panel switch can cancel a pending sidebar tween before GSAP reaches onComplete.
+        // A panel switch can cancel a pending sidebar animation before it completes.
         // Clean only orphaned animation state; an active sidebar animation keeps ownership.
         requestAnimationFrame(() => {
             if (!sidebarTween) {
@@ -2932,7 +3150,9 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     function syncFocusMode() {
         const activePanel = getThemePanels().find(panelIsOpen);
         if (activePanel) {
-            enterFocusMode(activePanel);
+            if (!document.body.classList.contains('xy-focus-revealing')) {
+                enterFocusMode(activePanel);
+            }
         } else {
             leaveFocusMode();
         }
@@ -3003,6 +3223,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             || drawer?.querySelector('.drawer-toggle')?.getAttribute('aria-expanded') !== 'false';
         const wasOpen = panel.dataset.xyPanelState === 'open';
         const wasPinned = panel.classList.contains('pinnedOpen') || panel.classList.contains('drawerPinnedOpen');
+        panel.dataset.xyPanelManaged = 'true';
         delete panel.dataset.xyPanelOpening;
         if (wasOpen) {
             delete panel.dataset.xyPanelState;
@@ -3013,6 +3234,30 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         if (wasOpen || wasPinned || needsIconSync) {
             setPanelIconState(panel, false);
         }
+        restorePanelHome(panel);
+    }
+
+    async function closeFocusWorkspace(startTogether) {
+        const panels = getThemePanels().filter((panel) => panelIsOpen(panel)
+            || panel.classList.contains('pinnedOpen')
+            || panel.classList.contains('drawerPinnedOpen'));
+        const workspace = ensureFocusWorkspace();
+        if (!panels.length) {
+            startTogether?.();
+            workspace.setAttribute('aria-hidden', 'true');
+            workspace.dataset.xyFocusWorkspaceState = 'closed';
+            syncFocusMode();
+            return true;
+        }
+
+        workspace.dataset.xyFocusWorkspaceState = 'closing';
+        return animateFocusWorkspace('close', () => {
+            panels.forEach(closePanel);
+            pendingPanelId = null;
+            syncFocusMode();
+            workspace.setAttribute('aria-hidden', 'true');
+            workspace.dataset.xyFocusWorkspaceState = 'closed';
+        }, startTogether);
     }
 
     function forceCloseStartupPanel(panel) {
@@ -3081,23 +3326,67 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         requestAnimationFrame(checkGeometry);
     }
 
-    function toggleThemePanel(panel, drawer, deferReveal = false) {
-        if (panelIsOpen(panel)) {
-            closePanel(panel);
-        } else {
-            closeCompetingPanels(drawer);
-            if (deferReveal) {
-                panel.dataset.xyPanelOpening = 'true';
-            }
-            openPanel(panel);
-            // 首页快捷入口必须直接进入完整工作台，不能留下原生抽屉的首帧小窗。
-            enterFocusMode(panel);
-            if (deferReveal) {
-                revealPanelWhenReady(panel);
-            }
+    async function toggleThemePanel(panel, drawer, deferReveal = false) {
+        const workspace = ensureFocusWorkspace();
+        if (workspace.dataset.xyFocusWorkspaceAnimating === 'true'
+            || workspace.dataset.xyFocusWorkspaceBusy === 'true') {
+            return;
+        }
+
+        const activePanel = getThemePanels().find(panelIsOpen);
+        if (activePanel === panel) {
+            await closeFocusWorkspace();
+            pendingPanelId = null;
+            return;
+        }
+
+        if (activePanel) {
+            closePanel(activePanel);
+        }
+        closeCompetingPanels(drawer);
+        if (deferReveal) {
+            panel.dataset.xyPanelOpening = 'true';
+        }
+        workspace.setAttribute('aria-hidden', 'false');
+        workspace.dataset.xyFocusWorkspaceState = activePanel ? 'open' : 'preparing';
+        let openingAnimation = null;
+        if (!activePanel) {
+            // Start the composited travel before mounting the large native drawer subtree.
+            // Both operations finish in this event turn, so the first paint still includes
+            // the panel, while visual motion no longer waits on its synchronous setup.
+            ensureFocusScrim();
+            workspace.dataset.xyFocusWorkspaceBusy = 'true';
+            workspace.dataset.xyFocusWorkspaceState = 'opening';
+            document.body.classList.remove('xy-focus-closing');
+            openingAnimation = animateFocusWorkspace('open', () => {
+                workspace.dataset.xyFocusWorkspaceState = 'open';
+            });
+        }
+        openPanel(panel);
+        // 首页快捷入口必须直接进入完整工作台，不能留下原生抽屉的首帧小窗。
+        enterFocusMode(panel);
+        // Match the closing path: the workspace always travels above the current base page.
+        // Apply this before the readiness frames so no blank frame is visible on opening.
+        if (!activePanel) {
+            revealBasePageForFocusClose();
+        }
+        if (deferReveal) {
+            revealPanelWhenReady(panel);
         }
         pendingPanelId = null;
         scheduleFocusSync();
+        if (activePanel) {
+            return;
+        }
+
+        try {
+            const opened = await openingAnimation;
+            if (!opened && getThemePanels().some(panelIsOpen)) {
+                workspace.dataset.xyFocusWorkspaceState = 'open';
+            }
+        } finally {
+            delete workspace.dataset.xyFocusWorkspaceBusy;
+        }
     }
 
     function bindThemePanelSwitching() {
@@ -3122,25 +3411,18 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             event.preventDefault();
             event.stopImmediatePropagation();
             promptPopup.querySelector('#completion_prompt_manager_popup_entry_form_close')?.click();
-            getThemePanels().forEach(closePanel);
-            pendingPanelId = null;
-            scheduleFocusSync();
+            void closeFocusWorkspace();
             return true;
         };
 
         window.addEventListener('pointerdown', closePromptWorkspaceFromScrim, true);
 
-        // This runs before document-level native drawer handlers. It also covers the welcome
-        // page's .drawer-opener shortcuts, so every themed entry takes the same fast path.
-        window.addEventListener('click', async (event) => {
+        let suppressThemePanelClickUntil = 0;
+        const activateThemePanel = async (event) => {
             const target = event.target instanceof Element ? event.target : null;
-            if (closePromptWorkspaceFromScrim(event)) {
-                return;
-            }
-
             const match = resolveThemePanelTrigger(target);
             if (!match) {
-                return;
+                return false;
             }
 
             event.preventDefault();
@@ -3149,7 +3431,38 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             if (isShortcut) {
                 await setSidebarMode('expanded');
             }
-            toggleThemePanel(match.panel, match.drawer, isShortcut);
+            await toggleThemePanel(match.panel, match.drawer, isShortcut);
+            return true;
+        };
+
+        // Pointerdown is intentionally used for direct sidebar icons. A click event is sent
+        // only after mouseup, which made opening feel delayed even though WAAPI was ready.
+        window.addEventListener('pointerdown', (event) => {
+            if (closePromptWorkspaceFromScrim(event) || event.button !== 0) {
+                return;
+            }
+            if (event.target instanceof Element && resolveThemePanelTrigger(event.target)) {
+                suppressThemePanelClickUntil = performance.now() + 900;
+                void activateThemePanel(event);
+            }
+        }, true);
+
+        // Suppress the mouseup-generated click after pointerdown, but retain keyboard click
+        // activation for the same controls.
+        window.addEventListener('click', (event) => {
+            if (closePromptWorkspaceFromScrim(event)) {
+                return;
+            }
+            const target = event.target instanceof Element ? event.target : null;
+            if (!resolveThemePanelTrigger(target)) {
+                return;
+            }
+            if (performance.now() < suppressThemePanelClickUntil) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            }
+            void activateThemePanel(event);
         }, true);
     }
 
@@ -3209,6 +3522,120 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         });
     }
 
+    const THEME_CHAT_WIDTH_MIN = 60;
+    const THEME_CHAT_WIDTH_MAX = 80;
+    const THEME_CHAT_WIDTH_DEFAULT_KEY = 'xy-theme-chat-width-default-applied';
+
+    function clampThemeChatWidth(value) {
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) {
+            return THEME_CHAT_WIDTH_MIN;
+        }
+        return Math.min(THEME_CHAT_WIDTH_MAX, Math.max(THEME_CHAT_WIDTH_MIN, Math.round(numericValue)));
+    }
+
+    function bindThemeChatWidth() {
+        if (window.__xyThemeChatWidthBound) {
+            return true;
+        }
+
+        const slider = document.querySelector('#chat_width_slider');
+        const counter = document.querySelector('#chat_width_slider_counter');
+        if (!(slider instanceof HTMLInputElement) || !(counter instanceof HTMLInputElement)) {
+            return false;
+        }
+
+        slider.min = String(THEME_CHAT_WIDTH_MIN);
+        slider.max = String(THEME_CHAT_WIDTH_MAX);
+        counter.min = String(THEME_CHAT_WIDTH_MIN);
+        counter.max = String(THEME_CHAT_WIDTH_MAX);
+
+        let applyDefault = false;
+        try {
+            applyDefault = window.localStorage.getItem(THEME_CHAT_WIDTH_DEFAULT_KEY) !== 'true';
+            window.localStorage.setItem(THEME_CHAT_WIDTH_DEFAULT_KEY, 'true');
+        } catch {
+            // Storage can be unavailable in private browsing; range enforcement still works.
+        }
+
+        const initialValue = applyDefault ? THEME_CHAT_WIDTH_MIN : clampThemeChatWidth(slider.value);
+        const initialChanged = Number(slider.value) !== initialValue || Number(counter.value) !== initialValue;
+        slider.value = String(initialValue);
+        counter.value = String(initialValue);
+        if (initialChanged) {
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        let isSyncing = false;
+        const applyClampedWidth = (value) => {
+            const clampedValue = clampThemeChatWidth(value);
+            isSyncing = true;
+            slider.value = String(clampedValue);
+            counter.value = String(clampedValue);
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+            isSyncing = false;
+            return clampedValue;
+        };
+        const enforceRange = (event) => {
+            const target = event.target;
+            if (isSyncing
+                || !(target instanceof HTMLInputElement)
+                || (target !== slider && target !== counter)) {
+                return;
+            }
+            if (target === counter && event.type === 'input') {
+                return;
+            }
+
+            const clampedValue = clampThemeChatWidth(target.value);
+            if (Number(target.value) === clampedValue) {
+                return;
+            }
+
+            event.stopImmediatePropagation();
+            applyClampedWidth(clampedValue);
+        };
+
+        window.addEventListener('input', enforceRange, true);
+        window.addEventListener('change', enforceRange, true);
+        counter.addEventListener('blur', () => {
+            if (isSyncing || Number(counter.value) === clampThemeChatWidth(counter.value)) {
+                return;
+            }
+            applyClampedWidth(counter.value);
+        });
+        window.__xyThemeChatWidthBound = true;
+        return true;
+    }
+
+    function getFocusPanelSlotFromEventPath(eventPath) {
+        const panelSlot = document.querySelector('#xy-focus-panel-slot');
+        return panelSlot instanceof HTMLElement && eventPath.includes(panelSlot) ? panelSlot : null;
+    }
+
+    function protectFocusPanelFromNativeDrawerClose(event) {
+        if (!getThemePanels().some(panelIsOpen)) {
+            return;
+        }
+
+        const panelSlot = getFocusPanelSlotFromEventPath(event.composedPath());
+        if (!panelSlot) {
+            return;
+        }
+
+        // SillyTavern's html-level mousedown handler only recognizes .openDrawer ancestry.
+        // The focused panel is reparented, so expose a pinned sentinel for this event only.
+        panelSlot.dataset.xyNativeDrawerShield = 'true';
+        panelSlot.classList.add('openDrawer', 'pinnedOpen');
+        queueMicrotask(() => {
+            if (panelSlot.dataset.xyNativeDrawerShield !== 'true') {
+                return;
+            }
+            delete panelSlot.dataset.xyNativeDrawerShield;
+            panelSlot.classList.remove('openDrawer', 'pinnedOpen');
+        });
+    }
+
     function closeOnOutsideClick(event) {
         const target = event.target instanceof Element ? event.target : null;
         const eventPath = event.composedPath();
@@ -3221,6 +3648,10 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         // 扩展页内部包含动态组件与第三方卷签，点击行为完全交还酒馆原生处理。
         // composedPath 同时覆盖普通 DOM、动态挂载节点与 Shadow DOM 内部事件。
         if (extensionsPanel && eventPath.includes(extensionsPanel)) {
+            return;
+        }
+
+        if (getFocusPanelSlotFromEventPath(eventPath)) {
             return;
         }
 
@@ -3252,7 +3683,10 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         if (target?.closest('#top-settings-holder .drawer')) {
             return;
         }
-        getThemePanels().forEach(closePanel);
+        if (getThemePanels().some(panelIsOpen)) {
+            void closeFocusWorkspace();
+            return;
+        }
         pendingPanelId = null;
         queueMicrotask(scheduleFocusSync);
     }
@@ -3444,6 +3878,8 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         scheduleMessageMetaCards();
     }
 
+    window.addEventListener('mousedown', protectFocusPanelFromNativeDrawerClose, true);
+    window.addEventListener('touchstart', protectFocusPanelFromNativeDrawerClose, true);
     document.addEventListener('click', closeOnOutsideClick, true);
     document.addEventListener('click', closeExtensionManagerOnBackdrop, true);
     document.addEventListener('click', optimisticallyReorderPinnedChat, true);
@@ -3467,6 +3903,8 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     window.addEventListener('beforeunload', persistActiveWorldbookMemory);
     enforceThemePresentation();
     applyThemeDisplayDefaults();
+    bindThemeChatWidth();
+    requestAnimationFrame(bindThemeChatWidth);
     bindThemePanelSwitching();
     bindWelcomeSelectionGuard();
     const focusObserver = new MutationObserver((mutations) => {
@@ -3531,6 +3969,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     ensureComposerPlaceholder();
     ensureComposerEffects();
     ensureComposerMenuAlignment();
+    void ensureGenderDialogue();
     syncHomePixelSnow();
     ensureWelcomeHome();
     bindMessageMetaCards();
@@ -3542,6 +3981,9 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     setTimeout(ensureComposerEffects, 500);
     setTimeout(ensureComposerEffects, 1500);
     setTimeout(ensureComposerMenuAlignment, 500);
+    setTimeout(() => void ensureGenderDialogue(), 500);
+    setTimeout(() => void ensureGenderDialogue(), 1500);
+    setTimeout(() => void ensureGenderDialogue(), 3000);
     setTimeout(scheduleWelcomeHome, 500);
     setTimeout(scheduleWelcomeHome, 1500);
     setTimeout(applyThemeDisplayDefaults, 500);
