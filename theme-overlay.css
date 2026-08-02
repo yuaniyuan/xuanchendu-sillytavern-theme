@@ -1,4 +1,4 @@
-@import url("./theme.css?v=1.0.11");
+@import url("./theme.css?v=1.0.14");
 
 /* 以独立资源层覆盖旧主题缓存：保留宣纸纹理，仅将最近聊天调整为蓝白渐变。 */
 body.bubblechat #chat:has(> .welcomePanel) .welcomePanel .recentChatList > .recentChat.recentChat {

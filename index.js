@@ -1,5 +1,5 @@
 (() => {
-    const EXTENSION_VERSION = '1.0.5';
+    const EXTENSION_VERSION = '1.0.6';
     const INSTALL_REFRESH_STORAGE_KEY = 'xy-theme-install-refresh-version';
     document.documentElement.dataset.xyTwoWing = 'loaded';
     document.documentElement.dataset.xyLayout = 'sidebar';
@@ -55,7 +55,7 @@
         gsap: new URL('assets/vendor/gsap-3.13.0.min.js?v=3.13.0-composer', import.meta.url).href,
         pixelSnow: new URL('assets/pixel-snow.js?v=1.2.0', import.meta.url).href,
         sidebarGrainient: new URL('assets/grainient-sidebar.js?v=1.6.0', import.meta.url).href,
-        genderDialogue: new URL('assets/gender-dialogue.js?v=1.0.4', import.meta.url).href,
+        genderDialogue: new URL('assets/gender-dialogue.js?v=1.0.12', import.meta.url).href,
         floatingBallDock: new URL('assets/floating-ball-dock.js?v=1.0.13', import.meta.url).href,
     };
     const PANEL_SELECTOR = [
@@ -136,20 +136,38 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
     let genderDialoguePromise = null;
     let genderDialoguePromptEventsBound = false;
     let floatingBallDockPromise = null;
+    const MESSAGE_PRESENTATION_PROMPT_ENABLED_KEY = 'xy-message-presentation-prompt-enabled-v1';
     const MESSAGE_META_MESSAGE_SELECTOR = '.mes[mesid]:not(.smallSysMes):not([type="welcome_prompt"])';
     const MESSAGE_META_RELEVANT_NODE_SELECTOR = '.timestamp, .tokenCounterDisplay, .mes_timer, .mes_block, .mes_header, .ch_name';
     const MESSAGE_META_BATCH_SIZE = 6;
 
+    function isMessagePresentationPromptEnabled() {
+        try {
+            return window.localStorage.getItem(MESSAGE_PRESENTATION_PROMPT_ENABLED_KEY) !== 'false';
+        } catch {
+            return true;
+        }
+    }
+
+    function setMessagePresentationPromptEnabled(enabled) {
+        try {
+            window.localStorage.setItem(MESSAGE_PRESENTATION_PROMPT_ENABLED_KEY, String(Boolean(enabled)));
+        } catch {
+            // The prompt remains controllable for this page when storage is unavailable.
+        }
+    }
+
     function registerGenderDialoguePrompt(core, dialogueModule) {
+        const enabled = isMessagePresentationPromptEnabled();
         core.setExtensionPrompt(
             dialogueModule.DIALOGUE_GENDER_PROMPT_KEY,
-            dialogueModule.DIALOGUE_GENDER_PROMPT,
+            enabled ? dialogueModule.DIALOGUE_GENDER_PROMPT : '',
             core.extension_prompt_types.IN_CHAT,
             0,
             false,
             core.extension_prompt_roles.SYSTEM,
         );
-        document.documentElement.dataset.xyGenderDialoguePrompt = 'registered';
+        document.documentElement.dataset.xyGenderDialoguePrompt = enabled ? 'registered' : 'disabled';
     }
 
     function ensureGenderDialogue() {
@@ -180,6 +198,22 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             dialogueModule?.bindGenderDialogueRenderer();
             return dialogueModule;
         });
+    }
+
+    async function refreshMessagePresentationPrompt() {
+        const dialogueModule = await ensureGenderDialogue();
+        if (!dialogueModule) {
+            return false;
+        }
+        try {
+            const core = await import(new URL('../../../../script.js', import.meta.url).href);
+            registerGenderDialoguePrompt(core, dialogueModule);
+            return true;
+        } catch (error) {
+            document.documentElement.dataset.xyGenderDialoguePrompt = 'failed';
+            console.warn('[玄尘渡] 消息标记提示词刷新失败。', error);
+            return false;
+        }
     }
 
     function ensureFloatingBallDock() {
@@ -2148,6 +2182,9 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
                     <button type="button" class="menu_button_icon xy-vessel-exit-popover__tool xy-vessel-exit-popover__snow" aria-pressed="true" aria-label="背景飞雪">
                         <i class="fa-solid fa-snowflake" aria-hidden="true"></i>
                     </button>
+                    <button type="button" class="menu_button_icon xy-vessel-exit-popover__tool xy-vessel-exit-popover__presentation" aria-pressed="true" aria-label="消息标记注入">
+                        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>`;
         document.body.append(popover);
@@ -2156,12 +2193,14 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         const confirm = popover.querySelector('.xy-vessel-exit-popover__confirm');
         const memory = popover.querySelector('.xy-vessel-exit-popover__memory');
         const snow = popover.querySelector('.xy-vessel-exit-popover__snow');
+        const presentation = popover.querySelector('.xy-vessel-exit-popover__presentation');
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
         const controller = {
             popover,
             status,
             confirm,
             memory,
+            presentation,
             timeline: null,
             sequence: 0,
             open: false,
@@ -2194,6 +2233,18 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             snow.removeAttribute('title');
         };
         controller.syncSnowButton();
+        controller.syncPresentationButton = () => {
+            if (!(presentation instanceof HTMLButtonElement)) {
+                return;
+            }
+            const enabled = isMessagePresentationPromptEnabled();
+            presentation.setAttribute('aria-pressed', String(enabled));
+            presentation.dataset.tooltip = enabled
+                ? '消息标记注入已开启　以最高优先级约束时空栏与人物台词'
+                : '消息标记注入已关闭　下次生成不再注入时空栏与台词协议';
+            presentation.removeAttribute('title');
+        };
+        controller.syncPresentationButton();
 
         const getSideOffset = (side, distance = 8) => ({
             right: { x: -distance, y: 0 },
@@ -2330,6 +2381,15 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
             setHomePixelSnowEnabled(!isHomePixelSnowEnabled());
             controller.syncSnowButton();
         });
+        presentation?.addEventListener('click', () => {
+            const enabled = !isMessagePresentationPromptEnabled();
+            setMessagePresentationPromptEnabled(enabled);
+            controller.syncPresentationButton();
+            if (status) {
+                status.textContent = enabled ? '消息标记注入已开启' : '消息标记注入已关闭';
+            }
+            void refreshMessagePresentationPrompt();
+        });
         document.addEventListener('pointerdown', (event) => {
             if (!controller.open || popover.contains(event.target) || event.target instanceof Element && event.target.closest('#xy-vessel-hub')) {
                 return;
@@ -2358,6 +2418,7 @@ const WELCOME_HOME_VERSION = 'xuanchendu-v16';
         controller.confirm.disabled = false;
         controller.syncMemoryButton?.();
         controller.syncSnowButton?.();
+        controller.syncPresentationButton?.();
         controller.popover.hidden = false;
         controller.popover.style.opacity = '0';
         controller.popover.style.visibility = 'hidden';

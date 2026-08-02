@@ -439,6 +439,39 @@ body.bubblechat #chat .mes_text .xy-dialogue q::after {
   content: none;
 }
 
+/* 时空栏由前端将渲染标记或旧版代码围栏统一落为此 class。 */
+body.bubblechat #chat .mes_text > .xy-timebar {
+  display: flex;
+  justify-content: center;
+  margin: .15em 0 1.35em;
+  text-align: center;
+  text-indent: 0;
+}
+
+body.bubblechat #chat .mes_text > .xy-timebar > time:has(> code) {
+  display: contents;
+}
+
+body.bubblechat #chat .mes_text > .xy-timebar > :is(time:not(:has(> code)), time > code) {
+  box-sizing: border-box;
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  max-inline-size: 100%;
+  padding: .52em 1.35em .56em;
+  overflow-wrap: anywhere;
+  color: var(--xy-body-text) !important;
+  font-family: inherit;
+  font-size: 1.08em;
+  font-weight: 600;
+  line-height: 1.5;
+  text-shadow: 0 1px 1px rgba(20, 12, 17, .72) !important;
+  border: 1px solid rgba(170, 197, 207, .22) !important;
+  border-radius: 12px;
+  background: linear-gradient(128deg, rgba(14, 30, 43, .96) 0%, rgba(31, 55, 72, .94) 52%, rgba(17, 38, 56, .97) 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(214, 233, 235, .12), inset 0 0 0 1px rgba(8, 20, 30, .24), 0 3px 10px rgba(18, 49, 61, .18) !important;
+}
+
 body.bubblechat:not(.xy-focus-mode) #chat :is(.mes_text, .mes_reasoning) hr {
   border: 0;
   border-top: 1px solid var(--xy-card-border);
